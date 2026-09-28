@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import type { AppView } from '../../domain/rag/types';
-import { APP_CONFIG } from '../config/app.config';
 import { Icon, type IconName } from './Icon';
 
 interface NavItem {
@@ -12,7 +11,6 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { id: 'consulta', label: 'Consulta', icon: 'search' },
   { id: 'historico', label: 'Histórico', icon: 'clock' },
-  { id: 'fontes', label: 'Fontes', icon: 'compass' },
 ];
 
 interface HeaderProps {
@@ -51,21 +49,16 @@ export function Header({
             </button>
           ) : null}
 
+          {/* Lado esquerdo ultra clean: apenas o nome Nexo */}
           <div
             className="brand-clickable"
             onClick={() => handleSelectNav('consulta')}
             role="button"
             tabIndex={0}
             onKeyDown={(e) => e.key === 'Enter' && handleSelectNav('consulta')}
-            aria-label="Ir para a página inicial de Consulta"
+            aria-label="Nexo - Início"
           >
-            <div className="brand-mark">
-              <Icon name="compass" size={20} />
-            </div>
-            <div className="brand-copy">
-              <strong className="brand-title">{APP_CONFIG.name.toUpperCase()}</strong>
-              <p className="brand-sub">{APP_CONFIG.subtitle}</p>
-            </div>
+            <span className="brand-logo-text">Nexo</span>
           </div>
 
           {/* Botão Menu Hambúrguer (Mobile) */}
@@ -80,7 +73,7 @@ export function Header({
           </button>
         </div>
 
-        {/* Abas de Navegação Principais (Consulta | Histórico | Fontes) */}
+        {/* Abas de Navegação Principais (Consulta | Histórico) */}
         <nav className="header-nav-tabs" aria-label="Navegação principal">
           {NAV_ITEMS.map((item) => (
             <button
@@ -110,12 +103,7 @@ export function Header({
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mobile-drawer-header">
-              <div className="drawer-brand">
-                <div className="brand-mark sm">
-                  <Icon name="compass" size={16} />
-                </div>
-                <span>Nexo RJ</span>
-              </div>
+              <span className="brand-logo-text">Nexo</span>
               <button
                 type="button"
                 className="icon-button"
@@ -127,7 +115,6 @@ export function Header({
             </div>
 
             <div className="mobile-drawer-section">
-              <span className="drawer-section-title">Navegação</span>
               <div className="drawer-nav-list">
                 {NAV_ITEMS.map((item) => (
                   <button
