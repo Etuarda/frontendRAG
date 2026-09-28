@@ -1,5 +1,5 @@
-import { CONFIDENCE_LABELS, KNOWLEDGE_BASES, REFUSAL_LABELS } from '../../../domain/rag/catalog';
-import type { RagResponse } from '../../../domain/rag/types';
+import { EVIDENCE_LEVEL_LABELS, REFUSAL_LABELS } from '../../../domain/rag/catalog';
+import type { ConfidenceLevel, EvidenceNature, RagResponse, SourceRef } from '../../../domain/rag/types';
 import { Icon } from '../../../shared/components/Icon';
 
 interface AnswerPanelProps {
@@ -7,112 +7,183 @@ interface AnswerPanelProps {
   onReset: () => void;
 }
 
-function findBaseName(id: string) {
-  return KNOWLEDGE_BASES.find((base) => base.id === id)?.name ?? id;
+function getFriendlyBaseName(baseId: string): string {
+  switch (baseId) {
+    case 'normativa':
+    case 'editais_normativo':
+    case 'normas_contratacoes':
+      return 'Normas e Legislação Oficial';
+    case 'estruturada':
+    case 'contratos_estruturado':
+      return 'Editais e Contratos (PNCP / SIGA-RJ)';
+    case 'conversacional':
+    case 'atas_conversacional':
+      return 'Atas de Sessão e Registros';
+    case 'agregada':
+    case 'pca_agregado':
+      return 'Dados Abertos e Indicadores';
+    default:
+      return 'Fontes Oficiais';
+  }
+}
+
+function formatFriendlySource(source: SourceRef): { title: string; context: string } {
+  const file = source.source_file;
+  if (
+    file.includes('—') ||
+    file.includes('Lei') ||
+    file.includes('PNCP') ||
+    file.includes('SIGA') ||
+    file.includes('DOERJ') ||
+    file.includes('Portal')
+  ) {
+    return {
+      title: file,
+      context: getFriendlyBaseName(source.base_id),
+    };
+  }
+
+  const cleanName = file.replace(/\.(pdf|json|csv|html)$/i, '').replace(/_/g, ' ');
+  return {
+    title: cleanName,
+    context: getFriendlyBaseName(source.base_id),
+  };
+}
+
+function getEvidenceDotClass(level: ConfidenceLevel): string {
+  switch (level) {
+    case 'alta':
+      return 'dot-success';
+    case 'media':
+      return 'dot-warning';
+    case 'baixa':
+    case 'recusado':
+      return 'dot-danger';
+  }
 }
 
 export function AnswerPanel({ response, onReset }: AnswerPanelProps) {
   return (
     <section className="result-stack">
+      {/* 1. Pergunta realizada */}
       <div className="query-recap">
-        <span className="recap-label">Pergunta:</span>
-        <strong className="recap-query">“{response.query}”</strong>
-        <button type="button" className="btn-secondary btn-sm" onClick={onReset}>
+        <div className="recap-content">
+          <span className="recap-label">Pergunta realizada:</span>
+          <strong className="recap-query">“{response.query}”</strong>
+        </div>
+        <button
+          type="button"
+          className="btn-secondary btn-sm"
+          onClick={onReset}
+          aria-label="Fazer nova consulta"
+        >
           <Icon name="refresh" size={14} />
-          <span>Nova Consulta</span>
+          <span>Nova Pesquisa</span>
         </button>
       </div>
 
       {response.is_refusal ? (
+        /* Estado de Consulta Não Respondida (Orientado ao Usuário) */
         <article className="refusal-panel" role="alert">
           <div className="refusal-heading">
             <div className="refusal-icon">
-              <Icon name="shield" size={20} />
+              <Icon name="info" size={20} />
             </div>
             <div>
-              <h2>Resposta Recusada por Guardrail de Conformidade</h2>
-              <p>O sistema interrompeu a resposta para proteger a integridade dos dados e respeitar os limites de evidência.</p>
-            </div>
-          </div>
-          <div className="refusal-reason">
-            <strong>Motivo do bloqueio:</strong>{' '}
-            <span>
-              {response.refusal_reason
-                ? REFUSAL_LABELS[response.refusal_reason]
-                : 'A consulta não pôde ser respondida com segurança.'}
-            </span>
-          </div>
-          <div className="refusal-answer">{response.answer}</div>
-        </article>
-      ) : (
-        <>
-          <div className="result-metrics">
-            <div className="metric-box">
-              <span className="metric-box-label">Grau de Certeza</span>
-              <strong className="metric-box-value">
-                {CONFIDENCE_LABELS[response.confidence_level]}
-              </strong>
-            </div>
-            <div className="metric-box">
-              <span className="metric-box-label">Bases Consultadas</span>
-              <strong className="metric-box-value">
-                {response.bases_consultadas.length}{' '}
-                {response.bases_consultadas.length === 1 ? 'Base' : 'Bases'}
-              </strong>
-            </div>
-            <div className="metric-box">
-              <span className="metric-box-label">Evidências Recuperadas</span>
-              <strong className="metric-box-value">
-                {response.sources_used.length}{' '}
-                {response.sources_used.length === 1 ? 'Documento' : 'Documentos'}
-              </strong>
+              <h2>Não foi possível responder esta consulta</h2>
+              <p>
+                As fontes disponíveis não fornecem evidências suficientes para responder esta
+                pergunta com segurança.
+              </p>
             </div>
           </div>
 
-          <article className="answer-card">
+          {response.refusal_reason ? (
+            <div className="refusal-reason">
+              <strong>Motivo:</strong>{' '}
+              <span>{REFUSAL_LABELS[response.refusal_reason]}</span>
+            </div>
+          ) : null}
+
+          {response.answer ? (
+            <div className="refusal-answer">{response.answer}</div>
+          ) : null}
+        </article>
+      ) : (
+        <>
+          {/* 2. Resposta Principal (Centro de Prioridade Visual) */}
+          <article className="answer-card" aria-labelledby="answer-heading">
             <header className="answer-card-header">
               <div className="answer-status-tag">
                 <span className="dot-indicator dot-success" />
-                <strong>Síntese Fundamentada por Evidências</strong>
+                <h2 id="answer-heading" className="answer-title-text">
+                  Resposta Fundamentada
+                </h2>
               </div>
-              <span className="answer-meta-source">Pipeline Adaptive RAG · PNCP / SIGA / DOERJ</span>
+              <span className="answer-meta-source">
+                {response.sources_used.length}{' '}
+                {response.sources_used.length === 1 ? 'fonte oficial verificada' : 'fontes oficiais verificadas'}
+              </span>
             </header>
 
             <div className="answer-body">{response.answer}</div>
 
-            {response.bases_consultadas.length > 0 ? (
-              <section className="answer-section">
-                <h3>Bases de Conhecimento Utilizadas</h3>
-                <div className="used-bases-list">
-                  {response.bases_consultadas.map((base) => (
-                    <div className="used-base-item" key={base}>
-                      <span className="dot-indicator" />
-                      <strong>{findBaseName(base)}</strong>
-                      <span className="used-base-tag">Roteador Adaptativo</span>
-                    </div>
-                  ))}
+            {/* 3. Fontes Utilizadas */}
+            {response.sources_used.length > 0 ? (
+              <section className="answer-section" aria-labelledby="sources-heading">
+                <div className="answer-section-header">
+                  <h3 id="sources-heading">
+                    Fontes utilizadas ({response.sources_used.length}{' '}
+                    {response.sources_used.length === 1 ? 'referência' : 'referências'})
+                  </h3>
+                </div>
+                <div className="sources-list">
+                  {response.sources_used.map((source, index) => {
+                    const friendly = formatFriendlySource(source);
+                    return (
+                      <div className="source-item" key={`${source.source_file}-${index}`}>
+                        <div className="source-item-icon">
+                          <Icon name="file-text" size={16} />
+                        </div>
+                        <div className="source-item-details">
+                          <strong className="source-item-filename">{friendly.title}</strong>
+                          <span className="source-item-meta">{friendly.context}</span>
+                          {source.trecho ? (
+                            <p className="source-item-excerpt">“{source.trecho}”</p>
+                          ) : null}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </section>
             ) : null}
 
-            {response.sources_used.length > 0 ? (
-              <section className="answer-section">
-                <h3>Fontes e Trechos Utilizados</h3>
-                <div className="sources-list">
-                  {response.sources_used.map((source) => (
-                    <div className="source-item" key={`${source.base_id}-${source.chunk_id}`}>
-                      <Icon name="file-text" size={16} />
-                      <div className="source-item-details">
-                        <strong className="source-item-filename">{source.source_file}</strong>
-                        <span className="source-item-meta">
-                          Base: {source.base_id} | Chunk: {source.chunk_id}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+            {/* 4. Informações Complementares */}
+            <footer className="answer-card-footer" aria-label="Informações complementares">
+              <div className="footer-meta-block">
+                <span className="footer-meta-label">Nível de evidência</span>
+                <span className="footer-meta-value">
+                  <span
+                    className={`dot-indicator ${getEvidenceDotClass(response.confidence_level)}`}
+                  />
+                  <strong>{EVIDENCE_LEVEL_LABELS[response.confidence_level]}</strong>
+                </span>
+              </div>
+
+              {response.bases_consultadas.length > 0 ? (
+                <div className="footer-meta-block">
+                  <span className="footer-meta-label">Fontes de dados consultadas</span>
+                  <div className="used-bases-chips">
+                    {response.bases_consultadas.map((base: EvidenceNature) => (
+                      <span key={base} className="base-chip">
+                        {getFriendlyBaseName(base)}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-              </section>
-            ) : null}
+              ) : null}
+            </footer>
           </article>
         </>
       )}

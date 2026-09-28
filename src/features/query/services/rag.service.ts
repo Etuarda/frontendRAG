@@ -10,17 +10,29 @@ class RagService {
       return mockQuery(payload.query);
     }
 
-    const response = await fetch(`${API_BASE_URL}/api/v1/query`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/query`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
 
-    if (!response.ok) {
-      throw new Error(`Falha ao consultar o RAG: HTTP ${response.status}`);
+      if (!response.ok) {
+        if (response.status >= 500) {
+          throw new Error('O serviço está temporariamente indisponível.');
+        }
+        throw new Error('Não foi possível concluir a consulta. Tente novamente.');
+      }
+
+      return (await response.json()) as RagResponse;
+    } catch (err) {
+      if (err instanceof Error && err.message) {
+        if (err.message.includes('indisponível') || err.message.includes('concluir')) {
+          throw err;
+        }
+      }
+      throw new Error('Não foi possível conectar ao serviço. Tente novamente em alguns instantes.');
     }
-
-    return (await response.json()) as RagResponse;
   }
 
   async health(): Promise<boolean> {

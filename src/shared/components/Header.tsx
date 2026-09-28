@@ -12,12 +12,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { id: 'consulta', label: 'Consulta', icon: 'search' },
   { id: 'historico', label: 'Histórico', icon: 'clock' },
-  { id: 'corpus', label: 'Corpus', icon: 'database' },
   { id: 'fontes', label: 'Fontes', icon: 'compass' },
-  { id: 'curadoria', label: 'Curadoria', icon: 'shield' },
-  { id: 'pipeline', label: 'Pipeline', icon: 'sliders' },
-  { id: 'avaliacao', label: 'Avaliação', icon: 'check' },
-  { id: 'observabilidade', label: 'Observabilidade', icon: 'cpu' },
 ];
 
 interface HeaderProps {
@@ -25,8 +20,6 @@ interface HeaderProps {
   onSelectView: (view: AppView) => void;
   sidebarOpen: boolean;
   onToggleSidebar: () => void;
-  onOpenBases: () => void;
-  onOpenGuardrails: () => void;
 }
 
 export function Header({
@@ -34,8 +27,6 @@ export function Header({
   onSelectView,
   sidebarOpen,
   onToggleSidebar,
-  onOpenBases,
-  onOpenGuardrails,
 }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -53,8 +44,8 @@ export function Header({
               type="button"
               className="icon-button sidebar-toggle-btn"
               onClick={onToggleSidebar}
-              aria-label={sidebarOpen ? 'Ocultar histórico' : 'Ver histórico'}
-              title={sidebarOpen ? 'Ocultar histórico' : 'Ver histórico'}
+              aria-label={sidebarOpen ? 'Ocultar histórico' : 'Ver histórico da sessão'}
+              title={sidebarOpen ? 'Ocultar histórico' : 'Ver histórico da sessão'}
             >
               <Icon name="clock" size={18} />
             </button>
@@ -66,22 +57,30 @@ export function Header({
             role="button"
             tabIndex={0}
             onKeyDown={(e) => e.key === 'Enter' && handleSelectNav('consulta')}
+            aria-label="Ir para a página inicial de Consulta"
           >
             <div className="brand-mark">
               <Icon name="compass" size={20} />
             </div>
             <div className="brand-copy">
-              <div className="brand-title-row">
-                <strong>{APP_CONFIG.name}</strong>
-                <span className="brand-divider">/</span>
-                <span className="brand-tag">ADAPTIVE RAG</span>
-              </div>
+              <strong className="brand-title">{APP_CONFIG.name.toUpperCase()}</strong>
               <p className="brand-sub">{APP_CONFIG.subtitle}</p>
             </div>
           </div>
+
+          {/* Botão Menu Hambúrguer (Mobile) */}
+          <button
+            type="button"
+            className="icon-button mobile-menu-toggle"
+            onClick={() => setMobileMenuOpen((curr) => !curr)}
+            aria-label={mobileMenuOpen ? 'Fechar menu de navegação' : 'Abrir menu de navegação'}
+            aria-expanded={mobileMenuOpen}
+          >
+            <Icon name={mobileMenuOpen ? 'x' : 'menu'} size={20} />
+          </button>
         </div>
 
-        {/* Abas de Navegação Profissionais */}
+        {/* Abas de Navegação Principais (Consulta | Histórico | Fontes) */}
         <nav className="header-nav-tabs" aria-label="Navegação principal">
           {NAV_ITEMS.map((item) => (
             <button
@@ -96,32 +95,9 @@ export function Header({
             </button>
           ))}
         </nav>
-
-        {/* Ações Institucionais */}
-        <div className="header-actions" aria-label="Ferramentas da aplicação">
-          <button type="button" onClick={onOpenBases} title="Ver bases do corpus">
-            <Icon name="database" size={15} />
-            <span className="action-btn-text">Bases do Corpus</span>
-          </button>
-          <button type="button" onClick={onOpenGuardrails} title="Ver regras de guardrails">
-            <Icon name="shield" size={15} />
-            <span className="action-btn-text">Guardrails</span>
-          </button>
-
-          {/* Botão Menu Hambúrguer (Mobile) */}
-          <button
-            type="button"
-            className="icon-button mobile-menu-toggle"
-            onClick={() => setMobileMenuOpen((curr) => !curr)}
-            aria-label={mobileMenuOpen ? 'Fechar menu de navegação' : 'Abrir menu de navegação'}
-            aria-expanded={mobileMenuOpen}
-          >
-            <Icon name={mobileMenuOpen ? 'x' : 'menu'} size={20} />
-          </button>
-        </div>
       </header>
 
-      {/* Drawer Móvel de Navegação Completa */}
+      {/* Drawer Móvel de Navegação (Mobile First) */}
       {mobileMenuOpen ? (
         <div
           className="mobile-drawer-backdrop"
@@ -138,7 +114,7 @@ export function Header({
                 <div className="brand-mark sm">
                   <Icon name="compass" size={16} />
                 </div>
-                <span>Nexo RJ · Navegação</span>
+                <span>Nexo RJ</span>
               </div>
               <button
                 type="button"
@@ -151,7 +127,7 @@ export function Header({
             </div>
 
             <div className="mobile-drawer-section">
-              <span className="drawer-section-title">Módulos do Sistema</span>
+              <span className="drawer-section-title">Navegação</span>
               <div className="drawer-nav-list">
                 {NAV_ITEMS.map((item) => (
                   <button
@@ -165,34 +141,6 @@ export function Header({
                     {activeView === item.id ? <span className="active-dot" /> : null}
                   </button>
                 ))}
-              </div>
-            </div>
-
-            <div className="mobile-drawer-section">
-              <span className="drawer-section-title">Controle e Integridade</span>
-              <div className="drawer-actions-list">
-                <button
-                  type="button"
-                  className="drawer-action-btn"
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    onOpenBases();
-                  }}
-                >
-                  <Icon name="database" size={16} />
-                  <span>Bases do Corpus</span>
-                </button>
-                <button
-                  type="button"
-                  className="drawer-action-btn"
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    onOpenGuardrails();
-                  }}
-                >
-                  <Icon name="shield" size={16} />
-                  <span>Guardrails & Conformidade</span>
-                </button>
               </div>
             </div>
           </nav>

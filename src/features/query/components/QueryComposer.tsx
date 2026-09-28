@@ -26,7 +26,7 @@ export function QueryComposer({ loading, onSubmit }: QueryComposerProps) {
         }}
       >
         <label htmlFor="query-input" className="query-label">
-          Consulta em Linguagem Natural
+          Pesquisar contratações públicas
         </label>
         <div className="query-input-wrapper">
           <Icon name="search" size={18} className="query-search-icon" />
@@ -43,13 +43,12 @@ export function QueryComposer({ loading, onSubmit }: QueryComposerProps) {
             className="primary-action"
             disabled={loading || !query.trim()}
           >
-            <span>{loading ? 'Processando...' : 'Consultar'}</span>
+            <span>{loading ? 'Pesquisando...' : 'Pesquisar'}</span>
             <Icon name="search" size={15} />
           </button>
         </div>
         <div className="query-meta">
-          <span>Roteamento adaptativo entre bases normativas, estruturadas e atas.</span>
-          <span className="query-meta-secondary">Busca Híbrida: Embeddings + BM25 com RRF</span>
+          <span>As fontes mais relevantes são selecionadas automaticamente para cada consulta.</span>
         </div>
       </form>
     </div>

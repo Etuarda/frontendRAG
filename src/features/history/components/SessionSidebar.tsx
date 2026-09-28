@@ -1,5 +1,5 @@
 import type { ApiHealthStatus, SessionEntry } from '../../../domain/rag/types';
-import { CONFIDENCE_LABELS } from '../../../domain/rag/catalog';
+import { EVIDENCE_LEVEL_LABELS } from '../../../domain/rag/catalog';
 import { Icon } from '../../../shared/components/Icon';
 import { formatTime } from '../../../shared/utils/formatters';
 
@@ -13,21 +13,33 @@ interface SessionSidebarProps {
 }
 
 const apiLabels: Record<ApiHealthStatus, string> = {
-  checking: 'Verificando API',
-  online: 'API conectada',
-  offline: 'API indisponível',
+  checking: 'Verificando serviço...',
+  online: 'Sistema disponível',
+  offline: 'Não foi possível conectar ao serviço. Tente novamente em alguns instantes.',
 };
 
-export function SessionSidebar({ open, entries, currentQuery, apiStatus, onSelect, onClear }: SessionSidebarProps) {
+export function SessionSidebar({
+  open,
+  entries,
+  currentQuery,
+  apiStatus,
+  onSelect,
+  onClear,
+}: SessionSidebarProps) {
   return (
-    <aside className={`session-sidebar ${open ? 'is-open' : ''}`}>
+    <aside className={`session-sidebar ${open ? 'is-open' : ''}`} aria-label="Histórico da sessão">
       <div className="sidebar-heading">
         <div>
           <Icon name="clock" size={15} />
           <span>Histórico da Sessão</span>
         </div>
         {entries.length > 0 ? (
-          <button type="button" className="clear-history" onClick={onClear}>
+          <button
+            type="button"
+            className="clear-history"
+            onClick={onClear}
+            aria-label="Limpar histórico da sessão"
+          >
             <Icon name="trash" size={13} />
             <span>Limpar</span>
           </button>
@@ -37,7 +49,9 @@ export function SessionSidebar({ open, entries, currentQuery, apiStatus, onSelec
       <div className="history-scroll">
         {entries.length === 0 ? (
           <div className="empty-history">
-            <div className="empty-history-icon"><Icon name="terminal" size={18} /></div>
+            <div className="empty-history-icon">
+              <Icon name="search" size={18} />
+            </div>
             <strong>Nenhuma consulta recente.</strong>
             <span>As perguntas desta sessão serão listadas aqui.</span>
           </div>
@@ -45,25 +59,28 @@ export function SessionSidebar({ open, entries, currentQuery, apiStatus, onSelec
           entries.map((entry) => {
             const response = entry.response;
             const active = response.query === currentQuery;
+            const isRefusal = response.is_refusal;
+            const level = response.confidence_level;
             return (
               <button
                 key={entry.id}
                 type="button"
                 className={`history-card ${active ? 'is-active' : ''}`}
                 onClick={() => onSelect(entry)}
+                aria-label={`Abrir consulta: ${response.query}`}
               >
                 <div className="history-card-meta">
                   <span className="history-status-label">
                     <span
                       className={`dot-indicator ${
-                        response.is_refusal
+                        isRefusal
                           ? 'dot-danger'
-                          : response.confidence_level === 'alta'
+                          : level === 'alta'
                           ? 'dot-success'
                           : 'dot-warning'
                       }`}
                     />
-                    {CONFIDENCE_LABELS[response.confidence_level]}
+                    {isRefusal ? 'Evidência insuficiente' : `Evidência: ${EVIDENCE_LEVEL_LABELS[level]}`}
                   </span>
                   <span>{formatTime(entry.createdAt)}</span>
                 </div>
@@ -75,8 +92,15 @@ export function SessionSidebar({ open, entries, currentQuery, apiStatus, onSelec
       </div>
 
       <div className="sidebar-footer">
-        <span className="sidebar-footer-brand">Nexo RJ · Adaptive RAG</span>
-        <span className={`api-state api-${apiStatus}`}><i />{apiLabels[apiStatus]}</span>
+        <span className="sidebar-footer-brand">Nexo RJ · Contratações Públicas</span>
+        <span
+          className={`api-state api-${apiStatus}`}
+          title={apiLabels[apiStatus]}
+          role="status"
+        >
+          <i />
+          <span>{apiLabels[apiStatus]}</span>
+        </span>
       </div>
     </aside>
   );

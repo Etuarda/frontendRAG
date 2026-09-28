@@ -49,12 +49,7 @@ export type ApiHealthStatus = 'checking' | 'online' | 'offline';
 export type AppView =
   | 'consulta'
   | 'historico'
-  | 'corpus'
-  | 'fontes'
-  | 'curadoria'
-  | 'pipeline'
-  | 'avaliacao'
-  | 'observabilidade';
+  | 'fontes';
 
 /* Modelos do Corpus */
 export interface CorpusBaseInfo {
@@ -80,9 +75,11 @@ export interface OfficialSource {
   id: string;
   nome: string;
   sigla: string;
+  instituicao: string;
+  tipoInformacao: string;
   url: string;
   natureza: EvidenceNature;
-  frequenciaColeta: string;
+  frequenciaColeta?: string;
   descricao: string;
 }
 

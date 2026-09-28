@@ -4,7 +4,6 @@ import { ragService } from '../services/rag.service';
 
 export function useRagWorkspace() {
   const [loading, setLoading] = useState(false);
-  const [loadingStep, setLoadingStep] = useState(0);
   const [currentResponse, setCurrentResponse] = useState<RagResponse | null>(null);
   const [history, setHistory] = useState<SessionEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -17,19 +16,6 @@ export function useRagWorkspace() {
     });
     return () => { active = false; };
   }, []);
-
-  useEffect(() => {
-    if (!loading) {
-      setLoadingStep(0);
-      return;
-    }
-
-    const timer = window.setInterval(() => {
-      setLoadingStep((current) => Math.min(current + 1, 4));
-    }, 650);
-
-    return () => window.clearInterval(timer);
-  }, [loading]);
 
   const submitQuery = useCallback(async (query: string) => {
     const normalized = query.trim();
@@ -63,7 +49,6 @@ export function useRagWorkspace() {
   return {
     apiStatus,
     loading,
-    loadingStep,
     currentResponse,
     history,
     error,
