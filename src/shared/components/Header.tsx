@@ -24,19 +24,22 @@ export function Header({
     <>
       <header className="app-header">
         <div className="header-inner">
-          {/* Lado esquerdo ultra limpo: apenas o nome Nexo */}
+          {/* Marca Institucional NEXO RJ */}
           <div
-            className="brand-clickable"
+            className="brand-container"
             onClick={() => handleSelectNav('consulta')}
             role="button"
             tabIndex={0}
             onKeyDown={(e) => e.key === 'Enter' && handleSelectNav('consulta')}
-            aria-label="Nexo - Ir para página inicial de consulta"
+            aria-label="NEXO RJ - Página inicial de consulta"
           >
-            <span className="brand-logo-text">Nexo</span>
+            <div className="brand-title-row">
+              <span className="brand-logo-text">NEXO RJ</span>
+            </div>
+            <span className="brand-subtext">Consulta inteligente de contratações públicas</span>
           </div>
 
-          {/* Navegação Desktop (Consulta | Histórico) */}
+          {/* Navegação Desktop (Consulta | Histórico | Fontes) */}
           <nav className="header-desktop-nav" aria-label="Navegação principal">
             <button
               type="button"
@@ -62,6 +65,16 @@ export function Header({
                 </span>
               ) : null}
             </button>
+
+            <button
+              type="button"
+              className={`nav-link-btn ${activeView === 'fontes' ? 'is-active' : ''}`}
+              onClick={() => handleSelectNav('fontes')}
+              aria-current={activeView === 'fontes' ? 'page' : undefined}
+            >
+              <Icon name="file-text" size={15} />
+              <span>Fontes</span>
+            </button>
           </nav>
 
           {/* Botão Menu Mobile */}
@@ -69,7 +82,7 @@ export function Header({
             type="button"
             className="mobile-menu-btn"
             onClick={() => setMobileMenuOpen((curr) => !curr)}
-            aria-label={mobileMenuOpen ? 'Fechar menu' : 'Abrir menu de opções'}
+            aria-label={mobileMenuOpen ? 'Fechar menu' : 'Abrir menu de navegação'}
             aria-expanded={mobileMenuOpen}
           >
             <Icon name={mobileMenuOpen ? 'x' : 'menu'} size={20} />
@@ -78,7 +91,7 @@ export function Header({
         </div>
       </header>
 
-      {/* Drawer Móvel de Navegação (Mobile First) */}
+      {/* Drawer Móvel de Navegação (Mobile-First) */}
       {mobileMenuOpen ? (
         <div
           className="mobile-drawer-backdrop"
@@ -87,11 +100,14 @@ export function Header({
         >
           <nav
             className="mobile-drawer"
-            aria-label="Menu principal"
+            aria-label="Menu principal de navegação"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mobile-drawer-top">
-              <span className="brand-logo-text">Nexo</span>
+              <div>
+                <span className="brand-logo-text">NEXO RJ</span>
+                <p className="mobile-drawer-subtext">Contratações públicas</p>
+              </div>
               <button
                 type="button"
                 className="drawer-close-btn"
@@ -130,6 +146,18 @@ export function Header({
                   ) : null}
                   {activeView === 'historico' ? <span className="drawer-active-indicator" /> : null}
                 </div>
+              </button>
+
+              <button
+                type="button"
+                className={`drawer-link ${activeView === 'fontes' ? 'is-active' : ''}`}
+                onClick={() => handleSelectNav('fontes')}
+              >
+                <div className="drawer-link-content">
+                  <Icon name="file-text" size={18} />
+                  <span>Fontes</span>
+                </div>
+                {activeView === 'fontes' ? <span className="drawer-active-indicator" /> : null}
               </button>
             </div>
 

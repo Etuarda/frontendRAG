@@ -139,26 +139,45 @@ a {
   gap: 1rem;
 }
 
-/* Lado Esquerdo: Apenas o Nome Nexo em Destaque Sólido */
-.brand-clickable {
-  display: inline-flex;
-  align-items: center;
+/* Lado Esquerdo: NEXO RJ e Subtítulo Institucional */
+.brand-container {
+  display: flex;
+  flex-direction: column;
   cursor: pointer;
   user-select: none;
-  padding: 0.25rem 0;
+  gap: 0.125rem;
+}
+
+.brand-title-row {
+  display: flex;
+  align-items: center;
 }
 
 .brand-logo-text {
-  font-size: 1.5rem;
-  font-weight: 800;
+  font-size: 1.375rem;
+  font-weight: 850;
   letter-spacing: -0.03em;
   color: var(--ink-primary);
-  line-height: 1;
+  line-height: 1.1;
   transition: color 0.15s ease;
 }
 
-.brand-clickable:hover .brand-logo-text {
+.brand-container:hover .brand-logo-text {
   color: var(--accent);
+}
+
+.brand-subtext {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--ink-muted);
+  line-height: 1.2;
+  display: none;
+}
+
+@media (min-width: 480px) {
+  .brand-subtext {
+    display: block;
+  }
 }
 
 /* Navegação Desktop: Consulta | Histórico (No Menu da Barra) */

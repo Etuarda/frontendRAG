@@ -46,31 +46,8 @@ export interface SessionEntry {
 
 export type ApiHealthStatus = 'checking' | 'online' | 'offline';
 
-export type AppView =
-  | 'consulta'
-  | 'historico'
-  | 'fontes';
+export type AppView = 'consulta' | 'historico' | 'fontes';
 
-/* Modelos do Corpus */
-export interface CorpusBaseInfo {
-  id: string;
-  natureza: EvidenceNature;
-  totalArquivos: number;
-  totalChunks: number;
-  status: 'sincronizado' | 'atualizando' | 'pendente';
-  ultimaColeta: string;
-}
-
-export interface CorpusDocumentInfo {
-  id: string;
-  nome: string;
-  base: EvidenceNature;
-  formato: 'PDF' | 'JSON' | 'CSV' | 'HTML';
-  tamanhoKb: number;
-  dataIndexacao: string;
-}
-
-/* Modelos de Fontes Oficiais */
 export interface OfficialSource {
   id: string;
   nome: string;
@@ -81,78 +58,4 @@ export interface OfficialSource {
   natureza: EvidenceNature;
   frequenciaColeta?: string;
   descricao: string;
-}
-
-/* Modelos de Curadoria e Sensibilidade */
-export interface CurationManifest {
-  versao: string;
-  totalDocumentos: number;
-  totalChunksValidos: number;
-  regrasAplicadas: number;
-  piiBloqueados: number;
-  ultimaAuditoria: string;
-}
-
-export interface SensitivityRule {
-  id: string;
-  nome: string;
-  categoria: 'PII' | 'Dados Bancários' | 'Segredos' | 'Limites Legais';
-  acao: 'anonimizar' | 'bloquear_consulta' | 'descartar_chunk';
-  status: 'ativo' | 'inativo';
-}
-
-/* Modelos de Pipeline */
-export interface PipelineConfig {
-  chunkSize: number;
-  overlap: number;
-  embeddingProvider: string;
-  rerankerModel: string;
-  topK: number;
-}
-
-export interface PipelineExecutionResult {
-  jobId: string;
-  status: 'sucesso' | 'em_progresso' | 'erro';
-  etapaAtual: string;
-  documentosProcessados: number;
-  duracaoSegundos: number;
-  mensagens: string[];
-}
-
-/* Modelos de Avaliação */
-export interface EvaluationMetrics {
-  totalPerguntas: number;
-  faithfulnessScore: number;
-  answerRelevancyScore: number;
-  contextPrecisionScore: number;
-  hitRateTop3: number;
-  dataAvaliacao: string;
-}
-
-export interface GoldenSetQuestion {
-  id: string;
-  pergunta: string;
-  persona: string;
-  rotaEsperada: EvidenceNature;
-  status: 'aprovado' | 'atencao' | 'falha';
-  confianca: ConfidenceLevel;
-}
-
-/* Modelos de Observabilidade */
-export interface ObservabilitySummary {
-  totalExecucoes: number;
-  latenciaMediaMs: number;
-  tokensConsumidosTotal: number;
-  taxaSucesso: number;
-}
-
-export interface ExecutionTrace {
-  runId: string;
-  queryId: string;
-  timestamp: string;
-  status: 'sucesso' | 'recusa' | 'erro';
-  tempoTotalMs: number;
-  tokensTotal: number;
-  modelo: string;
-  basesConsultadas: EvidenceNature[];
 }
