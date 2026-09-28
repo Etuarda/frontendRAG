@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import type { AppView, SessionEntry } from '../domain/rag/types';
 import { HistoryView } from '../features/history/components/HistoryView';
-import { SessionSidebar } from '../features/history/components/SessionSidebar';
 import { ProcessingStatus } from '../features/query/components/ProcessingStatus';
 import { QueryComposer } from '../features/query/components/QueryComposer';
 import { SuggestedQueries } from '../features/query/components/SuggestedQueries';
@@ -13,26 +12,16 @@ import { Icon } from '../shared/components/Icon';
 
 export function App() {
   const [activeView, setActiveView] = useState<AppView>('consulta');
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const workspace = useRagWorkspace();
 
   const handleSelectHistoryEntry = (entry: SessionEntry) => {
     workspace.selectHistoryEntry(entry);
     setActiveView('consulta');
-    setSidebarOpen(false);
   };
 
   const handleRepeatQuery = (query: string) => {
     workspace.submitQuery(query);
     setActiveView('consulta');
-    setSidebarOpen(false);
-  };
-
-  const handleSelectSidebarEntry = (entry: SessionEntry) => {
-    workspace.selectHistoryEntry(entry);
-    if (typeof window !== 'undefined' && window.innerWidth < 980) {
-      setSidebarOpen(false);
-    }
   };
 
   return (
@@ -40,29 +29,10 @@ export function App() {
       <Header
         activeView={activeView}
         onSelectView={setActiveView}
-        sidebarOpen={sidebarOpen}
-        onToggleSidebar={() => setSidebarOpen((current) => !current)}
+        historyCount={workspace.history.length}
       />
 
       <div className="workspace-shell">
-        {activeView === 'consulta' ? (
-          <>
-            <div
-              className={`sidebar-backdrop ${sidebarOpen ? 'is-visible' : ''}`}
-              onClick={() => setSidebarOpen(false)}
-              aria-hidden="true"
-            />
-            <SessionSidebar
-              open={sidebarOpen}
-              entries={workspace.history}
-              currentQuery={workspace.currentResponse?.query}
-              apiStatus={workspace.apiStatus}
-              onSelect={handleSelectSidebarEntry}
-              onClear={workspace.clearHistory}
-            />
-          </>
-        ) : null}
-
         <main className={`main-content ${activeView !== 'consulta' ? 'is-full-view' : ''}`}>
           <div className="content-column">
             {activeView === 'consulta' && (
