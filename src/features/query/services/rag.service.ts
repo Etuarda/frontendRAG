@@ -1,8 +1,17 @@
 import type { RagQueryRequest, RagResponse } from '../../../domain/rag/types';
 import { mockQuery } from '../../../mocks/rag.mock';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000';
+const configuredApiUrl = String(import.meta.env.VITE_API_BASE_URL ?? '').trim();
+const API_BASE_URL = (configuredApiUrl || (import.meta.env.DEV ? 'http://localhost:8000' : ''))
+  .replace(/\/$/, '');
 const USE_MOCKS = String(import.meta.env.VITE_USE_MOCKS ?? 'false') === 'true';
+
+function apiUrl(path: string): string {
+  if (!API_BASE_URL) {
+    throw new Error('API não configurada. Defina VITE_API_BASE_URL com a URL HTTPS do backend.');
+  }
+  return `${API_BASE_URL}${path}`;
+}
 
 class RagService {
   async query(payload: RagQueryRequest): Promise<RagResponse> {
@@ -10,14 +19,15 @@ class RagService {
       return mockQuery(payload.query);
     }
 
-    const response = await fetch(`${API_BASE_URL}/api/v1/query`, {
+    const response = await fetch(apiUrl('/api/v1/query'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
 
     if (!response.ok) {
-      throw new Error(`Falha ao consultar o RAG: HTTP ${response.status}`);
+      const error = await response.json().catch(() => null) as { detail?: string } | null;
+      throw new Error(error?.detail ?? `Falha ao consultar o RAG: HTTP ${response.status}`);
     }
 
     return (await response.json()) as RagResponse;
@@ -27,8 +37,10 @@ class RagService {
     if (USE_MOCKS) return true;
 
     try {
-      const response = await fetch(`${API_BASE_URL}/health`, { method: 'GET' });
-      return response.ok;
+      const response = await fetch(apiUrl('/health'), { method: 'GET' });
+      if (!response.ok) return false;
+      const body = await response.json() as { status?: unknown };
+      return body.status === 'ok';
     } catch {
       return false;
     }

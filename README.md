@@ -82,8 +82,13 @@ Abra [http://localhost:5173](http://localhost:5173) no seu navegador.
 VITE_API_BASE_URL=http://localhost:8000
 
 # True para navegar e testar a interface de forma autônoma com dados reais simulados
-VITE_USE_MOCKS=true
+VITE_USE_MOCKS=false
 ```
+
+Em produção, configure a variável de repositório `VITE_API_BASE_URL` em
+**Settings > Secrets and variables > Actions > Variables** com a URL HTTPS do
+backend publicado. O workflow de GitHub Pages rejeita URL vazia ou sem HTTPS e
+sempre compila com `VITE_USE_MOCKS=false`.
 
 ---
 

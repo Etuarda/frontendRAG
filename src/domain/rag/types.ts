@@ -13,7 +13,6 @@ export interface SourceRef {
   chunk_id: string;
   base_id: string;
   source_file: string;
-  trecho?: string;
 }
 
 export interface RagResponse {
@@ -23,14 +22,7 @@ export interface RagResponse {
   sources_used: SourceRef[];
   confidence_level: ConfidenceLevel;
   is_refusal: boolean;
-  refusal_reason?: RefusalReason | null;
-  pipeline_metadata?: {
-    run_id?: string;
-    query_id?: string;
-    latency_ms?: number;
-    tokens?: number;
-    model?: string;
-  };
+  refusal_reason: RefusalReason | null;
 }
 
 export interface RagQueryRequest {
