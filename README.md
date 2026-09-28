@@ -85,11 +85,6 @@ VITE_API_BASE_URL=http://localhost:8000
 VITE_USE_MOCKS=false
 ```
 
-Em produção, configure a variável de repositório `VITE_API_BASE_URL` em
-**Settings > Secrets and variables > Actions > Variables** com a URL HTTPS do
-backend publicado. O workflow de GitHub Pages rejeita URL vazia ou sem HTTPS e
-sempre compila com `VITE_USE_MOCKS=false`.
-
 ---
 
 ## 🎯 Princípios de Clean Code Aplicados
