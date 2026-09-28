@@ -25,132 +25,125 @@ export function HistoryView({
 
   return (
     <div className="view-container">
+      {/* Cabeçalho Editorial Sem Caixas */}
       <header className="view-header">
         <span className="section-eyebrow">REGISTRO DA SESSÃO</span>
-        <h1>Histórico de <em>Consultas</em></h1>
-        <p>
+        <h1 className="view-title">Histórico de <em>Consultas</em></h1>
+        <p className="view-description">
           Consulte, abra ou repita pesquisas realizadas nesta sessão de trabalho.
+        </p>
+        <p className="session-notice-clean">
+          <Icon name="info" size={14} />
+          <span>Armazenado temporariamente apenas nesta sessão do navegador.</span>
         </p>
       </header>
 
-      {/* Aviso de Privacidade de Sessão */}
-      <div className="session-notice-box" role="status">
-        <Icon name="info" size={16} />
-        <span>
-          O histórico é armazenado apenas nesta sessão de navegação e não fica salvo em servidores
-          externos.
-        </span>
-      </div>
+      {/* Barra de Filtro e Ações */}
+      <section className="history-section" aria-labelledby="history-heading">
+        <div className="history-toolbar">
+          <div className="history-count">
+            <h2 id="history-heading" className="history-count-title">
+              Consultas registradas ({filteredEntries.length})
+            </h2>
+          </div>
 
-      <section className="dashboard-card" aria-labelledby="history-list-heading">
-        <div className="section-toolbar">
-          <h2 id="history-list-heading" className="card-title">
-            <Icon name="clock" size={17} />
-            <span>Consultas da Sessão ({entries.length})</span>
-          </h2>
-          <div className="toolbar-controls">
+          <div className="history-controls">
             <div className="search-input-wrapper">
               <Icon name="search" size={15} />
               <input
                 type="search"
-                placeholder="Filtrar perguntas..."
+                placeholder="Filtrar por palavra-chave..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                aria-label="Buscar no histórico"
+                aria-label="Filtrar histórico de consultas"
               />
             </div>
             {entries.length > 0 ? (
               <button
                 type="button"
-                className="btn-secondary"
+                className="btn-text-action"
                 onClick={onClearHistory}
                 aria-label="Limpar todo o histórico da sessão"
               >
                 <Icon name="trash" size={14} />
-                <span>Limpar Histórico</span>
+                <span>Limpar histórico</span>
               </button>
             ) : null}
           </div>
         </div>
 
+        {/* Lista de Consultas (Mobile-First, Sem Caixas com Bordas) */}
         {filteredEntries.length === 0 ? (
-          <div className="empty-state-box">
-            <div className="empty-icon-circle">
-              <Icon name="search" size={20} />
-            </div>
+          <div className="empty-state-unboxed">
+            <Icon name="search" size={24} />
             <h3>Nenhuma consulta encontrada</h3>
             <p>
               {entries.length === 0
-                ? 'As perguntas que você pesquisar nesta sessão aparecerão listadas aqui.'
-                : 'Nenhuma pergunta corresponde ao filtro pesquisado.'}
+                ? 'As perguntas pesquisadas durante a sua navegação aparecerão listadas aqui.'
+                : 'Nenhuma pergunta coincide com o termo pesquisado.'}
             </p>
           </div>
         ) : (
-          <div className="table-responsive">
-            <table className="data-table" aria-label="Tabela de histórico de consultas">
-              <thead>
-                <tr>
-                  <th scope="col">Horário</th>
-                  <th scope="col">Pergunta</th>
-                  <th scope="col">Estado da Resposta</th>
-                  <th scope="col">Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredEntries.map((entry) => {
-                  const isRefusal = entry.response.is_refusal;
-                  const level = entry.response.confidence_level;
-                  return (
-                    <tr key={entry.id}>
-                      <td className="history-time-col">{formatTime(entry.createdAt)}</td>
-                      <td className="history-query-col">
-                        <strong>{entry.response.query}</strong>
-                      </td>
-                      <td>
-                        <span className="table-confidence-label">
-                          <span
-                            className={`dot-indicator ${
-                              isRefusal
-                                ? 'dot-danger'
-                                : level === 'alta'
-                                ? 'dot-success'
-                                : 'dot-warning'
-                            }`}
-                          />
-                          {isRefusal ? (
-                            <span>Evidência insuficiente</span>
-                          ) : (
-                            <span>Evidência: {EVIDENCE_LEVEL_LABELS[level]}</span>
-                          )}
-                        </span>
-                      </td>
-                      <td className="history-actions-col">
-                        <div className="history-actions-group">
-                          <button
-                            type="button"
-                            className="btn-action-primary"
-                            onClick={() => onSelectQuery(entry)}
-                            aria-label={`Abrir resposta da pergunta: ${entry.response.query}`}
-                          >
-                            <span>Abrir</span>
-                            <Icon name="arrow-up-right" size={12} />
-                          </button>
-                          <button
-                            type="button"
-                            className="btn-secondary btn-sm"
-                            onClick={() => onRepeatQuery(entry.response.query)}
-                            aria-label={`Repetir consulta: ${entry.response.query}`}
-                          >
-                            <Icon name="refresh" size={12} />
-                            <span>Repetir</span>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          <div className="history-feed" role="feed" aria-label="Lista de consultas anteriores">
+            {filteredEntries.map((entry) => {
+              const isRefusal = entry.response.is_refusal;
+              const level = entry.response.confidence_level;
+              return (
+                <article key={entry.id} className="history-entry">
+                  {/* Linha Superior: Horário e Grau de Evidência */}
+                  <div className="entry-meta-row">
+                    <time className="entry-timestamp">
+                      <Icon name="clock" size={13} />
+                      <span>{formatTime(entry.createdAt)}</span>
+                    </time>
+
+                    <div className="entry-status">
+                      <span
+                        className={`dot-indicator ${
+                          isRefusal
+                            ? 'dot-danger'
+                            : level === 'alta'
+                            ? 'dot-success'
+                            : 'dot-warning'
+                        }`}
+                      />
+                      <span className="entry-status-text">
+                        {isRefusal
+                          ? 'Evidência insuficiente'
+                          : `Evidência: ${EVIDENCE_LEVEL_LABELS[level]}`}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Corpo: Pergunta em destaque sem caixa */}
+                  <div className="entry-body">
+                    <h3 className="entry-query-title">{entry.response.query}</h3>
+                  </div>
+
+                  {/* Ações: Alvos ergonômicos */}
+                  <div className="entry-actions-row">
+                    <button
+                      type="button"
+                      className="btn-action-primary"
+                      onClick={() => onSelectQuery(entry)}
+                      aria-label={`Abrir resposta da pergunta: ${entry.response.query}`}
+                    >
+                      <span>Abrir resposta</span>
+                      <Icon name="arrow-up-right" size={13} />
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-action-secondary"
+                      onClick={() => onRepeatQuery(entry.response.query)}
+                      aria-label={`Repetir consulta: ${entry.response.query}`}
+                    >
+                      <Icon name="refresh" size={13} />
+                      <span>Repetir pesquisa</span>
+                    </button>
+                  </div>
+                </article>
+              );
+            })}
           </div>
         )}
       </section>

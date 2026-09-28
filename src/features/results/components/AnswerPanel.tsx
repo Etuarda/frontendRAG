@@ -63,35 +63,38 @@ function getEvidenceDotClass(level: ConfidenceLevel): string {
 }
 
 export function AnswerPanel({ response, onReset }: AnswerPanelProps) {
+  // Separação limpa de parágrafos da resposta
+  const paragraphs = response.answer
+    ? response.answer.split('\n\n').filter((p) => p.trim().length > 0)
+    : [];
+
   return (
-    <section className="result-stack">
-      {/* 1. Pergunta realizada */}
-      <div className="query-recap">
-        <div className="recap-content">
-          <span className="recap-label">Pergunta realizada:</span>
-          <strong className="recap-query">“{response.query}”</strong>
+    <div className="answer-flow">
+      {/* 1. Pergunta Realizada (Sem Caixa Fechada) */}
+      <section className="query-recap-unboxed">
+        <div className="recap-header-row">
+          <span className="section-eyebrow">CONSULTA REALIZADA</span>
+          <button
+            type="button"
+            className="btn-text-action"
+            onClick={onReset}
+            aria-label="Fazer nova pesquisa"
+          >
+            <Icon name="refresh" size={13} />
+            <span>Nova pesquisa</span>
+          </button>
         </div>
-        <button
-          type="button"
-          className="btn-secondary btn-sm"
-          onClick={onReset}
-          aria-label="Fazer nova consulta"
-        >
-          <Icon name="refresh" size={14} />
-          <span>Nova Pesquisa</span>
-        </button>
-      </div>
+        <h2 className="recap-query-headline">“{response.query}”</h2>
+      </section>
 
       {response.is_refusal ? (
-        /* Estado de Consulta Não Respondida (Orientado ao Usuário) */
-        <article className="refusal-panel" role="alert">
-          <div className="refusal-heading">
-            <div className="refusal-icon">
-              <Icon name="info" size={20} />
-            </div>
+        /* Estado de Recusa / Evidência Insuficiente (Unboxed) */
+        <article className="refusal-unboxed" role="alert">
+          <div className="refusal-header">
+            <Icon name="info" size={20} />
             <div>
-              <h2>Não foi possível responder esta consulta</h2>
-              <p>
+              <h2 className="refusal-title">Não foi possível responder esta consulta</h2>
+              <p className="refusal-desc">
                 As fontes disponíveis não fornecem evidências suficientes para responder esta
                 pergunta com segurança.
               </p>
@@ -99,60 +102,69 @@ export function AnswerPanel({ response, onReset }: AnswerPanelProps) {
           </div>
 
           {response.refusal_reason ? (
-            <div className="refusal-reason">
-              <strong>Motivo:</strong>{' '}
-              <span>{REFUSAL_LABELS[response.refusal_reason]}</span>
+            <div className="refusal-reason-clean">
+              <span className="refusal-reason-label">Motivo da restrição:</span>
+              <p className="refusal-reason-text">{REFUSAL_LABELS[response.refusal_reason]}</p>
             </div>
           ) : null}
 
-          {response.answer ? (
-            <div className="refusal-answer">{response.answer}</div>
+          {paragraphs.length > 0 ? (
+            <div className="refusal-body">
+              {paragraphs.map((para, i) => (
+                <p key={i}>{para}</p>
+              ))}
+            </div>
           ) : null}
         </article>
       ) : (
         <>
-          {/* 2. Resposta Principal (Centro de Prioridade Visual) */}
-          <article className="answer-card" aria-labelledby="answer-heading">
-            <header className="answer-card-header">
+          {/* 2. Resposta Principal Fundamentada (Unboxed, Espaçamento Editorial) */}
+          <article className="answer-prose-section" aria-labelledby="answer-title">
+            <header className="answer-meta-header">
               <div className="answer-status-tag">
                 <span className="dot-indicator dot-success" />
-                <h2 id="answer-heading" className="answer-title-text">
+                <h2 id="answer-title" className="answer-title-text">
                   Resposta Fundamentada
                 </h2>
               </div>
-              <span className="answer-meta-source">
+              <span className="answer-count-tag">
                 {response.sources_used.length}{' '}
-                {response.sources_used.length === 1 ? 'fonte oficial verificada' : 'fontes oficiais verificadas'}
+                {response.sources_used.length === 1 ? 'referência verificada' : 'referências verificadas'}
               </span>
             </header>
 
-            <div className="answer-body">{response.answer}</div>
+            <div className="answer-body-paragraphs">
+              {paragraphs.map((para, index) => (
+                <p key={index}>{para}</p>
+              ))}
+            </div>
 
-            {/* 3. Fontes Utilizadas */}
+            {/* 3. Fontes Utilizadas (Separadas com elegância, sem caixas fechadas) */}
             {response.sources_used.length > 0 ? (
-              <section className="answer-section" aria-labelledby="sources-heading">
-                <div className="answer-section-header">
-                  <h3 id="sources-heading">
-                    Fontes utilizadas ({response.sources_used.length}{' '}
-                    {response.sources_used.length === 1 ? 'referência' : 'referências'})
-                  </h3>
-                </div>
-                <div className="sources-list">
+              <section className="sources-unboxed-section" aria-labelledby="sources-heading">
+                <h3 id="sources-heading" className="sources-unboxed-title">
+                  Fontes oficiais utilizadas ({response.sources_used.length})
+                </h3>
+
+                <div className="sources-unboxed-list">
                   {response.sources_used.map((source, index) => {
                     const friendly = formatFriendlySource(source);
                     return (
-                      <div className="source-item" key={`${source.source_file}-${index}`}>
-                        <div className="source-item-icon">
-                          <Icon name="file-text" size={16} />
+                      <article
+                        className="source-unboxed-item"
+                        key={`${source.source_file}-${index}`}
+                      >
+                        <div className="source-item-top">
+                          <Icon name="file-text" size={15} />
+                          <h4 className="source-title-text">{friendly.title}</h4>
                         </div>
-                        <div className="source-item-details">
-                          <strong className="source-item-filename">{friendly.title}</strong>
-                          <span className="source-item-meta">{friendly.context}</span>
-                          {source.trecho ? (
-                            <p className="source-item-excerpt">“{source.trecho}”</p>
-                          ) : null}
-                        </div>
-                      </div>
+                        <span className="source-context-text">{friendly.context}</span>
+                        {source.trecho ? (
+                          <blockquote className="source-quote-excerpt">
+                            “{source.trecho}”
+                          </blockquote>
+                        ) : null}
+                      </article>
                     );
                   })}
                 </div>
@@ -160,10 +172,10 @@ export function AnswerPanel({ response, onReset }: AnswerPanelProps) {
             ) : null}
 
             {/* 4. Informações Complementares */}
-            <footer className="answer-card-footer" aria-label="Informações complementares">
-              <div className="footer-meta-block">
-                <span className="footer-meta-label">Nível de evidência</span>
-                <span className="footer-meta-value">
+            <footer className="answer-footer-clean" aria-label="Informações complementares">
+              <div className="answer-footer-item">
+                <span className="footer-label">Nível de evidência</span>
+                <span className="footer-value">
                   <span
                     className={`dot-indicator ${getEvidenceDotClass(response.confidence_level)}`}
                   />
@@ -172,11 +184,11 @@ export function AnswerPanel({ response, onReset }: AnswerPanelProps) {
               </div>
 
               {response.bases_consultadas.length > 0 ? (
-                <div className="footer-meta-block">
-                  <span className="footer-meta-label">Fontes de dados consultadas</span>
-                  <div className="used-bases-chips">
+                <div className="answer-footer-item">
+                  <span className="footer-label">Acervos consultados</span>
+                  <div className="footer-chips-list">
                     {response.bases_consultadas.map((base: EvidenceNature) => (
-                      <span key={base} className="base-chip">
+                      <span key={base} className="footer-chip">
                         {getFriendlyBaseName(base)}
                       </span>
                     ))}
@@ -187,6 +199,6 @@ export function AnswerPanel({ response, onReset }: AnswerPanelProps) {
           </article>
         </>
       )}
-    </section>
+    </div>
   );
 }
