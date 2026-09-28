@@ -8,13 +8,25 @@ interface SuggestedQueriesProps {
 
 export function SuggestedQueries({ disabled, onSelect }: SuggestedQueriesProps) {
   return (
-    <section className="suggestions-section">
-      <div className="section-kicker"><Icon name="sparkles" size={14} /><span>Perguntas de referência das personas</span></div>
+    <section className="suggestions-section" aria-labelledby="suggested-queries-title">
+      <h2 id="suggested-queries-title" className="section-title-sm">
+        <Icon name="file-text" size={16} />
+        <span>Consultas de Referência por Persona</span>
+      </h2>
+      <p className="section-subtitle">
+        Perguntas validadas para auditoria de editais, termos de referência e atas de pregão:
+      </p>
       <div className="suggestion-grid">
         {SUGGESTED_QUERIES.map((query) => (
-          <button key={query} type="button" disabled={disabled} onClick={() => onSelect(query)}>
+          <button
+            key={query}
+            type="button"
+            className="suggestion-item"
+            disabled={disabled}
+            onClick={() => onSelect(query)}
+          >
             <span>{query}</span>
-            <Icon name="arrow-up-right" size={16} />
+            <Icon name="arrow-up-right" size={15} />
           </button>
         ))}
       </div>

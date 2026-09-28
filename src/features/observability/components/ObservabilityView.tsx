@@ -8,19 +8,16 @@ export function ObservabilityView() {
   return (
     <div className="view-container">
       <header className="view-header">
-        <div className="hero-kicker">
-          <Icon name="cpu" size={14} />
-          <span>Monitoramento & Telemetria</span>
-        </div>
+        <span className="section-eyebrow">TELEMETRIA E AUDITORIA OPERACIONAL</span>
         <h1>Observabilidade do <em>Pipeline</em></h1>
-        <p>Acompanhe execuções, identificadores de rastreio, latência por etapa e consumo de tokens.</p>
+        <p>Rastreamento estruturado de execuções, identificadores de busca, medição de latência por estágio e consumo de tokens.</p>
       </header>
 
       {/* Métricas Operacionais */}
       <section className="dashboard-card" aria-labelledby="obs-summary-heading">
         <h2 id="obs-summary-heading" className="card-title">
-          <Icon name="activity" size={18} />
-          <span>Resumo de Execução (obs.py)</span>
+          <Icon name="activity" size={17} />
+          <span>Resumo Operacional das Consultas (obs.py)</span>
         </h2>
         <div className="stats-grid">
           <div className="stat-box">
@@ -32,11 +29,11 @@ export function ObservabilityView() {
             <strong className="stat-value">{MOCK_OBS_SUMMARY.latenciaMediaMs} ms</strong>
           </div>
           <div className="stat-box">
-            <span className="stat-label">Tokens Totais</span>
+            <span className="stat-label">Consumo de Tokens</span>
             <strong className="stat-value">{MOCK_OBS_SUMMARY.tokensConsumidosTotal.toLocaleString()}</strong>
           </div>
           <div className="stat-box">
-            <span className="stat-label">Taxa de Sucesso</span>
+            <span className="stat-label">Taxa de Resolução</span>
             <strong className="stat-value text-accent">{(MOCK_OBS_SUMMARY.taxaSucesso * 100).toFixed(1)}%</strong>
           </div>
         </div>
@@ -45,8 +42,8 @@ export function ObservabilityView() {
       {/* Traces de Execução */}
       <section className="dashboard-card" aria-labelledby="traces-heading">
         <h2 id="traces-heading" className="card-title">
-          <Icon name="terminal" size={18} />
-          <span>Traces Recentes do Pipeline</span>
+          <Icon name="cpu" size={17} />
+          <span>Registros Recentes de Rastreamento (Traces)</span>
         </h2>
         <div className="table-responsive">
           <table className="data-table">
@@ -65,29 +62,30 @@ export function ObservabilityView() {
             <tbody>
               {traces.map((trace) => (
                 <tr key={trace.runId}>
-                  <td><code>{trace.runId}</code></td>
-                  <td><code>{trace.queryId}</code></td>
+                  <td><code className="code-text">{trace.runId}</code></td>
+                  <td><code className="code-text">{trace.queryId}</code></td>
                   <td>{trace.timestamp}</td>
                   <td>
-                    <span
-                      className={`status-pill ${
-                        trace.status === 'sucesso'
-                          ? 'status-online'
-                          : trace.status === 'recusa'
-                          ? 'status-warning'
-                          : 'status-offline'
-                      }`}
-                    >
-                      <i /> {trace.status}
+                    <span className="table-status-tag">
+                      <span
+                        className={`dot-indicator ${
+                          trace.status === 'sucesso'
+                            ? 'dot-success'
+                            : trace.status === 'recusa'
+                            ? 'dot-warning'
+                            : 'dot-danger'
+                        }`}
+                      />
+                      {trace.status}
                     </span>
                   </td>
                   <td>{trace.tempoTotalMs} ms</td>
                   <td>{trace.tokensTotal}</td>
-                  <td><span className="model-badge">{trace.modelo}</span></td>
+                  <td>{trace.modelo}</td>
                   <td>
                     <div className="badge-row">
                       {trace.basesConsultadas.map((b) => (
-                        <span key={b} className={`nature-badge nature-${b} badge-compact`}>
+                        <span key={b} className="table-nature-tag">
                           {b}
                         </span>
                       ))}
@@ -102,4 +100,3 @@ export function ObservabilityView() {
     </div>
   );
 }
-

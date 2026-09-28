@@ -10,7 +10,7 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { id: 'consulta', label: 'Consulta', icon: 'sparkles' },
+  { id: 'consulta', label: 'Consulta', icon: 'search' },
   { id: 'historico', label: 'Histórico', icon: 'clock' },
   { id: 'corpus', label: 'Corpus', icon: 'database' },
   { id: 'fontes', label: 'Fontes', icon: 'compass' },
@@ -73,14 +73,15 @@ export function Header({
             <div className="brand-copy">
               <div className="brand-title-row">
                 <strong>{APP_CONFIG.name}</strong>
-                <span className="brand-badge">Adaptive RAG</span>
+                <span className="brand-divider">/</span>
+                <span className="brand-tag">ADAPTIVE RAG</span>
               </div>
               <p className="brand-sub">{APP_CONFIG.subtitle}</p>
             </div>
           </div>
         </div>
 
-        {/* Abas de Navegação (Desktop & Scroll Mobile) */}
+        {/* Abas de Navegação Profissionais */}
         <nav className="header-nav-tabs" aria-label="Navegação principal">
           {NAV_ITEMS.map((item) => (
             <button
@@ -96,14 +97,14 @@ export function Header({
           ))}
         </nav>
 
-        {/* Ações Desktop */}
+        {/* Ações Institucionais */}
         <div className="header-actions" aria-label="Ferramentas da aplicação">
           <button type="button" onClick={onOpenBases} title="Ver bases do corpus">
-            <Icon name="database" size={16} />
-            <span className="action-btn-text">Bases</span>
+            <Icon name="database" size={15} />
+            <span className="action-btn-text">Bases do Corpus</span>
           </button>
           <button type="button" onClick={onOpenGuardrails} title="Ver regras de guardrails">
-            <Icon name="shield" size={16} />
+            <Icon name="shield" size={15} />
             <span className="action-btn-text">Guardrails</span>
           </button>
 
@@ -129,15 +130,15 @@ export function Header({
         >
           <nav
             className="mobile-drawer"
-            aria-label="Menu móvel completo"
+            aria-label="Menu móvel de navegação"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mobile-drawer-header">
               <div className="drawer-brand">
                 <div className="brand-mark sm">
-                  <Icon name="compass" size={17} />
+                  <Icon name="compass" size={16} />
                 </div>
-                <span>Nexo RJ · Menu</span>
+                <span>Nexo RJ · Navegação</span>
               </div>
               <button
                 type="button"
@@ -150,7 +151,7 @@ export function Header({
             </div>
 
             <div className="mobile-drawer-section">
-              <span className="drawer-section-title">Navegação</span>
+              <span className="drawer-section-title">Módulos do Sistema</span>
               <div className="drawer-nav-list">
                 {NAV_ITEMS.map((item) => (
                   <button
@@ -159,7 +160,7 @@ export function Header({
                     className={`drawer-nav-item ${activeView === item.id ? 'is-active' : ''}`}
                     onClick={() => handleSelectNav(item.id)}
                   >
-                    <Icon name={item.icon} size={18} />
+                    <Icon name={item.icon} size={17} />
                     <span>{item.label}</span>
                     {activeView === item.id ? <span className="active-dot" /> : null}
                   </button>
@@ -168,7 +169,7 @@ export function Header({
             </div>
 
             <div className="mobile-drawer-section">
-              <span className="drawer-section-title">Ferramentas & Catálogo</span>
+              <span className="drawer-section-title">Controle e Integridade</span>
               <div className="drawer-actions-list">
                 <button
                   type="button"
@@ -178,7 +179,7 @@ export function Header({
                     onOpenBases();
                   }}
                 >
-                  <Icon name="database" size={17} />
+                  <Icon name="database" size={16} />
                   <span>Bases do Corpus</span>
                 </button>
                 <button
@@ -189,7 +190,7 @@ export function Header({
                     onOpenGuardrails();
                   }}
                 >
-                  <Icon name="shield" size={17} />
+                  <Icon name="shield" size={16} />
                   <span>Guardrails & Conformidade</span>
                 </button>
               </div>

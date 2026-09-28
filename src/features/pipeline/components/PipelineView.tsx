@@ -13,16 +13,16 @@ export function PipelineView() {
     setExecuting(true);
     setStatusMessage(
       mode === 'preview'
-        ? 'Gerando preview do pipeline: 32 novos documentos identificados para extração...'
-        : 'Executando atualização completa: chunking (512/64), geração de embeddings e indexação...'
+        ? 'Processando simulação dry-run: 32 novos documentos identificados para extração...'
+        : 'Executando atualização: fragmentação, vetorização e indexação de dados...'
     );
 
     setTimeout(() => {
       setExecuting(false);
       setStatusMessage(
         mode === 'preview'
-          ? 'Preview concluído: 32 documentos / 710 novos chunks estimados. Nenhum dado foi sobrescrito.'
-          : 'Atualização concluída com sucesso! 710 novos chunks indexados com provider ' + provider
+          ? 'Simulação concluída com sucesso: 32 documentos / 710 novos fragmentos calculados. Nenhuma alteração aplicada.'
+          : 'Atualização concluída: 710 novos fragmentos integrados às bases de vetores com o provider ' + provider
       );
     }, 2800);
   };
@@ -30,30 +30,27 @@ export function PipelineView() {
   return (
     <div className="view-container">
       <header className="view-header">
-        <div className="hero-kicker">
-          <Icon name="sliders" size={14} />
-          <span>Engenharia de Dados & RAG</span>
-        </div>
-        <h1>Pipeline de <em>Processamento</em></h1>
-        <p>Prepare, configure e execute as etapas de ingestão, fragmentação e geração de embeddings.</p>
+        <span className="section-eyebrow">ENGENHARIA DE DADOS E VETORIZAÇÃO</span>
+        <h1>Pipeline de <em>Processamento RAG</em></h1>
+        <p>Configuração, extração de texto, fragmentação e geração de embeddings para o acervo de contratações.</p>
       </header>
 
       {statusMessage ? (
         <div className="status-banner" role="status">
-          <Icon name={executing ? 'refresh' : 'check'} size={18} className={executing ? 'spin' : ''} />
+          <Icon name={executing ? 'refresh' : 'check'} size={16} className={executing ? 'spin' : ''} />
           <span>{statusMessage}</span>
         </div>
       ) : null}
 
       <div className="pipeline-grid">
-        {/* Painel de Ações Rápidas */}
+        {/* Painel de Ações */}
         <section className="dashboard-card" aria-labelledby="atualizacao-heading">
           <h2 id="atualizacao-heading" className="card-title">
-            <Icon name="refresh" size={18} />
-            <span>Atualização do Corpus</span>
+            <Icon name="refresh" size={17} />
+            <span>Atualização do Acervo</span>
           </h2>
           <p className="card-text">
-            Execute a varredura nas fontes remotas (PNCP, SIGA, DOERJ) para buscar novos editais e contratos publicados.
+            Executa a sincronização com as fontes governamentais do Estado do Rio de Janeiro (PNCP, SIGA e DOERJ) para indexar novas publicações oficiais.
           </p>
           <div className="action-button-group">
             <button
@@ -62,8 +59,8 @@ export function PipelineView() {
               disabled={executing}
               onClick={() => handleRun('preview')}
             >
-              <Icon name="file-text" size={16} />
-              <span>Gerar Preview (Dry-run)</span>
+              <Icon name="file-text" size={15} />
+              <span>Simulação (Dry-run)</span>
             </button>
             <button
               type="button"
@@ -71,21 +68,21 @@ export function PipelineView() {
               disabled={executing}
               onClick={() => handleRun('executar')}
             >
-              <Icon name="sparkles" size={16} />
-              <span>Executar Atualização</span>
+              <Icon name="check" size={15} />
+              <span>Executar Ingestão</span>
             </button>
           </div>
         </section>
 
-        {/* Configurações de Fragmentação (Chunking) */}
+        {/* Configurações de Fragmentação */}
         <section className="dashboard-card" aria-labelledby="prep-heading">
           <h2 id="prep-heading" className="card-title">
-            <Icon name="sliders" size={18} />
-            <span>Parâmetros de Preparação</span>
+            <Icon name="sliders" size={17} />
+            <span>Parâmetros de Fragmentação</span>
           </h2>
           <form className="stacked-form" onSubmit={(e) => e.preventDefault()}>
             <div className="form-group">
-              <label htmlFor="chunk-size">Tamanho do Chunk (Tokens)</label>
+              <label htmlFor="chunk-size">Tamanho do Fragmento (Tokens)</label>
               <input
                 id="chunk-size"
                 type="number"
@@ -95,11 +92,11 @@ export function PipelineView() {
                 value={chunkSize}
                 onChange={(e) => setChunkSize(Number(e.target.value))}
               />
-              <span className="field-hint">Padrão recomendado para textos jurídicos: 512 tokens.</span>
+              <span className="field-hint">Padrão estabelecido para atos normativos e termos de referência: 512 tokens.</span>
             </div>
 
             <div className="form-group">
-              <label htmlFor="overlap">Overlap (Sobreposição)</label>
+              <label htmlFor="overlap">Sobreposição / Overlap (Tokens)</label>
               <input
                 id="overlap"
                 type="number"
@@ -109,20 +106,20 @@ export function PipelineView() {
                 value={overlap}
                 onChange={(e) => setOverlap(Number(e.target.value))}
               />
-              <span className="field-hint">Garante continuidade de contexto entre fragmentos adjacentes.</span>
+              <span className="field-hint">Garante preservação de contexto jurídico e cláusulas contínuas.</span>
             </div>
 
             <div className="form-group">
-              <label htmlFor="embedding-provider">Provider de Embeddings</label>
+              <label htmlFor="embedding-provider">Modelo de Incorporação (Embeddings)</label>
               <select
                 id="embedding-provider"
                 className="select-control"
                 value={provider}
                 onChange={(e) => setProvider(e.target.value)}
               >
-                <option value="text-embedding-3-small">OpenAI text-embedding-3-small (1536d)</option>
-                <option value="text-embedding-3-large">OpenAI text-embedding-3-large (3072d)</option>
-                <option value="bge-m3">BAAI / BGE-M3 (Multilingual 1024d)</option>
+                <option value="text-embedding-3-small">OpenAI text-embedding-3-small (1536 dimensões)</option>
+                <option value="text-embedding-3-large">OpenAI text-embedding-3-large (3072 dimensões)</option>
+                <option value="bge-m3">BAAI / BGE-M3 Multilingual (1024 dimensões)</option>
               </select>
             </div>
           </form>
@@ -131,4 +128,3 @@ export function PipelineView() {
     </div>
   );
 }
-

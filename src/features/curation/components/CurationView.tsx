@@ -7,7 +7,7 @@ export function CurationView() {
   const [auditMessage, setAuditMessage] = useState<string | null>(null);
 
   const handleRunAudit = () => {
-    setAuditMessage('Executando varredura no corpus... 7.260 chunks validados sem vazamento de PII.');
+    setAuditMessage('Varredura concluída: 7.260 chunks validados sem vazamento de dados sensíveis ou PII.');
     setTimeout(() => {
       setAuditMessage(null);
     }, 4500);
@@ -24,30 +24,27 @@ export function CurationView() {
   return (
     <div className="view-container">
       <header className="view-header">
-        <div className="hero-kicker">
-          <Icon name="shield" size={14} />
-          <span>Curadoria e Conformidade</span>
-        </div>
+        <span className="section-eyebrow">CONFORMIDADE E INTEGRIDADE DE DADOS</span>
         <h1>Curadoria do <em>Corpus</em></h1>
-        <p>Políticas de sensibilidade, saneamento de dados e auditoria do acervo público.</p>
+        <p>Diretrizes de proteção de dados, regras de saneamento e auditoria legal das bases públicas.</p>
       </header>
 
       {/* Resumo do Manifesto */}
       <section className="dashboard-card" aria-labelledby="manifesto-heading">
         <div className="card-header-action">
           <h2 id="manifesto-heading" className="card-title">
-            <Icon name="file-text" size={18} />
+            <Icon name="file-text" size={17} />
             <span>Manifesto de Curadoria ({MOCK_CURATION_MANIFEST.versao})</span>
           </h2>
           <button type="button" className="btn-secondary" onClick={handleRunAudit}>
             <Icon name="refresh" size={14} />
-            <span>Verificar Integridade</span>
+            <span>Auditar Integridade</span>
           </button>
         </div>
 
         {auditMessage ? (
           <div className="info-banner" role="status">
-            <Icon name="check" size={16} />
+            <Icon name="check" size={15} />
             <span>{auditMessage}</span>
           </div>
         ) : null}
@@ -62,7 +59,7 @@ export function CurationView() {
             <strong className="stat-value">{MOCK_CURATION_MANIFEST.totalChunksValidos.toLocaleString()}</strong>
           </div>
           <div className="stat-box">
-            <span className="stat-label">Incidentes Bloqueados</span>
+            <span className="stat-label">Bloqueios de Sensibilidade</span>
             <strong className="stat-value text-accent">{MOCK_CURATION_MANIFEST.piiBloqueados}</strong>
           </div>
           <div className="stat-box">
@@ -75,15 +72,15 @@ export function CurationView() {
       {/* Regras de Sensibilidade */}
       <section className="dashboard-card" aria-labelledby="rules-heading">
         <h2 id="rules-heading" className="card-title">
-          <Icon name="shield" size={18} />
-          <span>Regras de Sensibilidade e Proteção (sensitivity.py)</span>
+          <Icon name="shield" size={17} />
+          <span>Regras de Sensibilidade Ativas (sensitivity.py)</span>
         </h2>
         <div className="table-responsive">
           <table className="data-table">
             <thead>
               <tr>
-                <th>ID</th>
-                <th>Regra</th>
+                <th>Código</th>
+                <th>Regra de Segurança</th>
                 <th>Categoria</th>
                 <th>Ação Obrigatória</th>
                 <th>Status</th>
@@ -93,13 +90,14 @@ export function CurationView() {
             <tbody>
               {rules.map((rule) => (
                 <tr key={rule.id}>
-                  <td><code>{rule.id}</code></td>
+                  <td><code className="code-text">{rule.id}</code></td>
                   <td><strong>{rule.nome}</strong></td>
-                  <td><span className="category-pill">{rule.categoria}</span></td>
-                  <td><code>{rule.acao}</code></td>
+                  <td>{rule.categoria}</td>
+                  <td><code className="code-text">{rule.acao}</code></td>
                   <td>
-                    <span className={`status-pill ${rule.status === 'ativo' ? 'status-online' : 'status-offline'}`}>
-                      <i /> {rule.status}
+                    <span className="table-status-tag">
+                      <span className={`dot-indicator ${rule.status === 'ativo' ? 'dot-success' : 'dot-danger'}`} />
+                      {rule.status}
                     </span>
                   </td>
                   <td>
@@ -120,4 +118,3 @@ export function CurationView() {
     </div>
   );
 }
-

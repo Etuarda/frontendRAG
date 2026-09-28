@@ -16,19 +16,16 @@ export function CorpusView() {
   return (
     <div className="view-container">
       <header className="view-header">
-        <div className="hero-kicker">
-          <Icon name="database" size={14} />
-          <span>Inventário de Documentos</span>
-        </div>
-        <h1>Corpus de <em>Contratações</em></h1>
-        <p>Inventário, versões e pesquisa nos documentos processados pelo pipeline do Adaptive RAG.</p>
+        <span className="section-eyebrow">INVENTÁRIO E ACERVO DE DADOS</span>
+        <h1>Corpus de <em>Contratações Públicas</em></h1>
+        <p>Inventário, versionamento e catálogo de documentos processados pelo pipeline do Adaptive RAG.</p>
       </header>
 
       {/* Resumo do Corpus */}
       <section className="dashboard-card" aria-labelledby="resumo-corpus-heading">
         <h2 id="resumo-corpus-heading" className="card-title">
-          <Icon name="layers" size={18} />
-          <span>Resumo do Acervo</span>
+          <Icon name="layers" size={17} />
+          <span>Resumo do Acervo Indexado</span>
         </h2>
         <div className="stats-grid">
           <div className="stat-box">
@@ -53,8 +50,8 @@ export function CorpusView() {
       {/* Bases de Conhecimento */}
       <section className="dashboard-card" aria-labelledby="bases-corpus-heading">
         <h2 id="bases-corpus-heading" className="card-title">
-          <Icon name="book-open" size={18} />
-          <span>Bases de Conhecimento Especializadas</span>
+          <Icon name="database" size={17} />
+          <span>Bases de Conhecimento por Natureza de Evidência</span>
         </h2>
         <div className="table-responsive">
           <table className="data-table">
@@ -71,9 +68,10 @@ export function CorpusView() {
             <tbody>
               {MOCK_CORPUS_BASES.map((b) => (
                 <tr key={b.id}>
-                  <td><code>{b.id}</code></td>
+                  <td><code className="code-text">{b.id}</code></td>
                   <td>
-                    <span className={`nature-badge nature-${b.natureza}`}>
+                    <span className="table-nature-tag">
+                      <span className="dot-indicator" />
                       {b.natureza}
                     </span>
                   </td>
@@ -81,8 +79,9 @@ export function CorpusView() {
                   <td>{b.totalChunks.toLocaleString()}</td>
                   <td>{b.ultimaColeta}</td>
                   <td>
-                    <span className="status-pill status-online">
-                      <i /> {b.status}
+                    <span className="table-status-tag">
+                      <span className="dot-indicator dot-success" />
+                      {b.status}
                     </span>
                   </td>
                 </tr>
@@ -96,7 +95,7 @@ export function CorpusView() {
       <section className="dashboard-card" aria-labelledby="docs-corpus-heading">
         <div className="section-toolbar">
           <h2 id="docs-corpus-heading" className="card-title">
-            <Icon name="file-text" size={18} />
+            <Icon name="file-text" size={17} />
             <span>Documentos Indexados</span>
           </h2>
           <div className="toolbar-controls">
@@ -104,7 +103,7 @@ export function CorpusView() {
               <Icon name="search" size={15} />
               <input
                 type="search"
-                placeholder="Buscar arquivo..."
+                placeholder="Filtrar por nome de arquivo..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -113,6 +112,7 @@ export function CorpusView() {
               className="select-control"
               value={filterBase}
               onChange={(e) => setFilterBase(e.target.value as EvidenceNature | 'todas')}
+              aria-label="Filtrar por base"
             >
               <option value="todas">Todas as bases</option>
               <option value="normativa">Normativa</option>
@@ -127,7 +127,7 @@ export function CorpusView() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>ID</th>
+                <th>Identificador</th>
                 <th>Arquivo</th>
                 <th>Base</th>
                 <th>Formato</th>
@@ -138,14 +138,15 @@ export function CorpusView() {
             <tbody>
               {filteredDocs.map((doc) => (
                 <tr key={doc.id}>
-                  <td><code>{doc.id}</code></td>
+                  <td><code className="code-text">{doc.id}</code></td>
                   <td><strong>{doc.nome}</strong></td>
                   <td>
-                    <span className={`nature-badge nature-${doc.base}`}>
+                    <span className="table-nature-tag">
+                      <span className="dot-indicator" />
                       {doc.base}
                     </span>
                   </td>
-                  <td><span className="format-badge">{doc.formato}</span></td>
+                  <td>{doc.formato}</td>
                   <td>{doc.tamanhoKb} KB</td>
                   <td>{doc.dataIndexacao}</td>
                 </tr>
@@ -157,4 +158,3 @@ export function CorpusView() {
     </div>
   );
 }
-

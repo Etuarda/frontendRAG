@@ -5,12 +5,9 @@ export function SourcesView() {
   return (
     <div className="view-container">
       <header className="view-header">
-        <div className="hero-kicker">
-          <Icon name="compass" size={14} />
-          <span>Proveniência e Transparência</span>
-        </div>
-        <h1>Fontes <em>Oficiais</em></h1>
-        <p>Catálogo de origens de dados de contratações públicas do Estado do Rio de Janeiro.</p>
+        <span className="section-eyebrow">TRANSPARÊNCIA E PROVENIÊNCIA</span>
+        <h1>Fontes <em>Oficiais</em> de Dados</h1>
+        <p>Catálogo de repositórios governamentais e portais oficiais de contratações públicas integrados ao pipeline.</p>
       </header>
 
       <div className="sources-grid">
@@ -18,8 +15,9 @@ export function SourcesView() {
           <article key={source.id} className="source-card">
             <header className="source-card-header">
               <div className="source-meta">
-                <span className="source-sigla">{source.sigla}</span>
-                <span className={`nature-badge nature-${source.natureza}`}>
+                <strong className="source-sigla">{source.sigla}</strong>
+                <span className="source-nature-label">
+                  <span className="dot-indicator" />
                   {source.natureza}
                 </span>
               </div>
@@ -28,10 +26,10 @@ export function SourcesView() {
                 target="_blank"
                 rel="noreferrer"
                 className="external-link"
-                title={`Acessar ${source.nome}`}
+                title={`Acessar portal ${source.nome}`}
               >
-                <span>Visitar</span>
-                <Icon name="arrow-up-right" size={14} />
+                <span>Acessar portal</span>
+                <Icon name="arrow-up-right" size={13} />
               </a>
             </header>
 
@@ -45,7 +43,7 @@ export function SourcesView() {
               </div>
               <div className="footer-meta-item">
                 <Icon name="shield" size={13} />
-                <span>Auditoria: <strong>Válida</strong></span>
+                <span>Auditoria: <strong>Conforme</strong></span>
               </div>
             </footer>
           </article>
@@ -54,4 +52,3 @@ export function SourcesView() {
     </div>
   );
 }
-

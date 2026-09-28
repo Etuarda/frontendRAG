@@ -23,18 +23,15 @@ export function HistoryView({ entries, onSelectQuery, onClearHistory }: HistoryV
   return (
     <div className="view-container">
       <header className="view-header">
-        <div className="hero-kicker">
-          <Icon name="clock" size={14} />
-          <span>Sessão & Histórico</span>
-        </div>
+        <span className="section-eyebrow">REGISTRO DE ATIVIDADE</span>
         <h1>Histórico de <em>Consultas</em></h1>
-        <p>Consulte, reabra e analise as perguntas e respostas geradas nesta sessão.</p>
+        <p>Acompanhe, filtre e reabra perguntas e respostas geradas nesta sessão de trabalho.</p>
       </header>
 
       <section className="dashboard-card" aria-labelledby="history-list-heading">
         <div className="section-toolbar">
           <h2 id="history-list-heading" className="card-title">
-            <Icon name="file-text" size={18} />
+            <Icon name="clock" size={17} />
             <span>Consultas Registradas ({entries.length})</span>
           </h2>
           <div className="toolbar-controls">
@@ -42,26 +39,28 @@ export function HistoryView({ entries, onSelectQuery, onClearHistory }: HistoryV
               <Icon name="search" size={15} />
               <input
                 type="search"
-                placeholder="Buscar no histórico..."
+                placeholder="Filtrar perguntas..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                aria-label="Buscar no histórico"
               />
             </div>
             <select
               className="select-control"
               value={confidenceFilter}
               onChange={(e) => setConfidenceFilter(e.target.value)}
+              aria-label="Filtrar por grau de confiança"
             >
-              <option value="todas">Todas as confianças</option>
-              <option value="alta">Alta</option>
-              <option value="media">Média</option>
-              <option value="baixa">Baixa</option>
+              <option value="todas">Todos os níveis de certeza</option>
+              <option value="alta">Alta certeza</option>
+              <option value="media">Média certeza</option>
+              <option value="baixa">Baixa certeza</option>
               <option value="recusado">Recusado</option>
             </select>
             {entries.length > 0 ? (
               <button type="button" className="btn-secondary" onClick={onClearHistory}>
                 <Icon name="trash" size={14} />
-                <span>Limpar</span>
+                <span>Limpar Histórico</span>
               </button>
             ) : null}
           </div>
@@ -70,7 +69,7 @@ export function HistoryView({ entries, onSelectQuery, onClearHistory }: HistoryV
         {filteredEntries.length === 0 ? (
           <div className="empty-state-box">
             <div className="empty-icon-circle">
-              <Icon name="search" size={24} />
+              <Icon name="search" size={20} />
             </div>
             <h3>Nenhuma consulta encontrada</h3>
             <p>Faça uma pergunta na aba Consulta ou ajuste os filtros acima.</p>
@@ -82,7 +81,7 @@ export function HistoryView({ entries, onSelectQuery, onClearHistory }: HistoryV
                 <tr>
                   <th>Horário</th>
                   <th>Pergunta</th>
-                  <th>Confiança</th>
+                  <th>Certeza</th>
                   <th>Bases</th>
                   <th>Ação</th>
                 </tr>
@@ -95,16 +94,23 @@ export function HistoryView({ entries, onSelectQuery, onClearHistory }: HistoryV
                       <strong>{entry.response.query}</strong>
                     </td>
                     <td>
-                      <span
-                        className={`confidence-pill confidence-${entry.response.confidence_level}`}
-                      >
+                      <span className="table-confidence-label">
+                        <span
+                          className={`dot-indicator ${
+                            entry.response.confidence_level === 'alta'
+                              ? 'dot-success'
+                              : entry.response.confidence_level === 'recusado'
+                              ? 'dot-danger'
+                              : 'dot-warning'
+                          }`}
+                        />
                         {entry.response.confidence_level}
                       </span>
                     </td>
                     <td>
                       <div className="badge-row">
                         {entry.response.bases_consultadas.map((b) => (
-                          <span key={b} className={`nature-badge nature-${b} badge-compact`}>
+                          <span key={b} className="table-nature-tag">
                             {b}
                           </span>
                         ))}
@@ -117,7 +123,7 @@ export function HistoryView({ entries, onSelectQuery, onClearHistory }: HistoryV
                         onClick={() => onSelectQuery(entry)}
                       >
                         <span>Reabrir</span>
-                        <Icon name="arrow-up-right" size={13} />
+                        <Icon name="arrow-up-right" size={12} />
                       </button>
                     </td>
                   </tr>
@@ -130,4 +136,3 @@ export function HistoryView({ entries, onSelectQuery, onClearHistory }: HistoryV
     </div>
   );
 }
-

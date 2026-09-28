@@ -8,15 +8,16 @@ O projeto foi estruturado seguindo os princípios de **Clean Code**, **Separaç�
 
 ---
 
-## 🏛️ Identidade Visual (Design System)
+## Identidade Visual e Diretrizes de Design (Design System)
 
-- **Paleta Editorial:** Fundo quente em tom de papel pergaminho (`#f7f5f0`), tipografia grafite (`#2c2a29`) e verde sálvia institucional (`#4a6748`).
-- **Tipografia:** Títulos em fontes serifadas clássicas (Georgia / Times New Roman) combinadas a sans-serif moderno de alta legibilidade para UI.
-- **Micro-interações:** Brilhos de iluminação ambiente dinâmicos (`ambient-glow`), cartões em vidro fosco (*backdrop-filter: blur*), crachás de natureza de evidência e pílulas de confiança.
+- **Paleta Institucional de Alto Contraste:** Fundo limpo neutro em tom de papel perolado (`#f7f6f2`), tipografia grafite profundo (`#111111`, `#33312e`) com taxa de contraste WCAG AAA, e acentos em verde escuro institucional (`#1e4b22`).
+- **Tipografia:** Títulos institucionais com peso editorial sólido combinados a sans-serif moderno de alta legibilidade para UI e dados.
+- **Padrão Profissional:** Sem artifícios gerados por IA (sem brilhos ambientais, sem cantos exagerados, sem gradientes chamativos). Status e tags apresentados via tipografia limpa e indicadores em ponto (`.dot-indicator`), sem fundos coloridos atrás de textos.
+- **Arquitetura Mobile-First:** Experiência pensada primariamente para smartphones e telas menores, com alvos de toque ergonômicos (>= 44px), navegação em drawer lateral com overlay, e aprimoramento progressivo para tablets e desktops.
 
 ---
 
-## 📁 Arquitetura de Pastas e Arquivos
+## Arquitetura de Pastas e Arquivos
 
 ```text
 frontend-rag/
@@ -59,7 +60,7 @@ frontend-rag/
 
 ---
 
-## 🚀 Como Executar
+## Como Executar
 
 ### 1. Aplicação React (SPA Interativa)
 
@@ -87,7 +88,7 @@ VITE_USE_MOCKS=true
 
 ---
 
-## 🎯 Princípios de Clean Code Aplicados
+## Princípios de Clean Code Aplicados
 
 1. **Responsabilidade Única (SRP):** Cada componente React ou arquivo CSS cuida de uma única responsabilidade visual ou de negócio.
 2. **Desacoplamento de Domínio:** As entidades e contratos em `src/domain/rag/types.ts` não dependem de bibliotecas visuais.

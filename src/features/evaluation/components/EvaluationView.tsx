@@ -8,31 +8,28 @@ export function EvaluationView() {
 
   const handleRunEvaluation = () => {
     setRunningEval(true);
-    setEvalFeedback('Avaliando 18 perguntas do Golden Set contra o pipeline RAG...');
+    setEvalFeedback('Executando bateria de testes sobre as 18 perguntas do Golden Set...');
 
     setTimeout(() => {
       setRunningEval(false);
-      setEvalFeedback('Avaliação concluída! Fidelidade (Faithfulness): 94.2% · Relevância: 91.0% · Sem regressões.');
+      setEvalFeedback('Avaliação concluída: Fidelidade (Faithfulness): 94.2% · Relevância: 91.0% · Sem regressões.');
     }, 2500);
   };
 
   return (
     <div className="view-container">
       <header className="view-header">
-        <div className="hero-kicker">
-          <Icon name="check" size={14} />
-          <span>Qualidade & Benchmarking</span>
-        </div>
+        <span className="section-eyebrow">CONTROLE DE QUALIDADE E BENCHMARKING</span>
         <h1>Avaliação do <em>Adaptive RAG</em></h1>
-        <p>Validação sistemática por Golden Set e métricas de fidelidade, precisão e relevância.</p>
+        <p>Validação sistemática por Golden Set e métricas automatizadas de fidelidade factual, precisão e relevância.</p>
       </header>
 
       {/* Resumo de Métricas RAG */}
       <section className="dashboard-card" aria-labelledby="eval-metrics-heading">
         <div className="card-header-action">
           <h2 id="eval-metrics-heading" className="card-title">
-            <Icon name="activity" size={18} />
-            <span>Métricas de Desempenho RAG (Ragas / G-Eval)</span>
+            <Icon name="activity" size={17} />
+            <span>Métricas de Acurácia e Fidelidade (Ragas / G-Eval)</span>
           </h2>
           <button
             type="button"
@@ -41,13 +38,13 @@ export function EvaluationView() {
             onClick={handleRunEvaluation}
           >
             <Icon name="refresh" size={14} className={runningEval ? 'spin' : ''} />
-            <span>{runningEval ? 'Executando...' : 'Rodar Avaliação'}</span>
+            <span>{runningEval ? 'Avaliando...' : 'Rodar Testes de Avaliação'}</span>
           </button>
         </div>
 
         {evalFeedback ? (
           <div className="info-banner" role="status">
-            <Icon name="check" size={16} />
+            <Icon name="check" size={15} />
             <span>{evalFeedback}</span>
           </div>
         ) : null}
@@ -75,16 +72,16 @@ export function EvaluationView() {
       {/* Casos do Golden Set */}
       <section className="dashboard-card" aria-labelledby="golden-set-heading">
         <h2 id="golden-set-heading" className="card-title">
-          <Icon name="book-open" size={18} />
-          <span>Casos de Referência (Golden Set do Cenário 1)</span>
+          <Icon name="file-text" size={17} />
+          <span>Perguntas de Teste do Golden Set (Cenário 1)</span>
         </h2>
         <div className="table-responsive">
           <table className="data-table">
             <thead>
               <tr>
-                <th>ID</th>
+                <th>Código</th>
                 <th>Pergunta de Referência</th>
-                <th>Persona</th>
+                <th>Persona Alvo</th>
                 <th>Rota Esperada</th>
                 <th>Status</th>
               </tr>
@@ -92,17 +89,19 @@ export function EvaluationView() {
             <tbody>
               {MOCK_GOLDEN_SET.map((item) => (
                 <tr key={item.id}>
-                  <td><code>{item.id}</code></td>
+                  <td><code className="code-text">{item.id}</code></td>
                   <td><strong>{item.pergunta}</strong></td>
-                  <td><span className="persona-badge">{item.persona}</span></td>
+                  <td>{item.persona}</td>
                   <td>
-                    <span className={`nature-badge nature-${item.rotaEsperada}`}>
+                    <span className="table-nature-tag">
+                      <span className="dot-indicator" />
                       {item.rotaEsperada}
                     </span>
                   </td>
                   <td>
-                    <span className="status-pill status-online">
-                      <i /> {item.status}
+                    <span className="table-status-tag">
+                      <span className="dot-indicator dot-success" />
+                      {item.status}
                     </span>
                   </td>
                 </tr>
@@ -114,4 +113,3 @@ export function EvaluationView() {
     </div>
   );
 }
-

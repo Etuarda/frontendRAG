@@ -20,19 +20,18 @@ import { Icon } from '../shared/components/Icon';
 
 export function App() {
   const [activeView, setActiveView] = useState<AppView>('consulta');
-  const [sidebarOpen, setSidebarOpen] = useState(false); // Mobile-first: closed by default on small viewports
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeModal, setActiveModal] = useState<'bases' | 'guardrails' | null>(null);
   const workspace = useRagWorkspace();
 
   const handleSelectHistoryEntry = (entry: SessionEntry) => {
     workspace.selectHistoryEntry(entry);
     setActiveView('consulta');
-    setSidebarOpen(false); // Close drawer on selection
+    setSidebarOpen(false);
   };
 
   const handleSelectSidebarEntry = (entry: SessionEntry) => {
     workspace.selectHistoryEntry(entry);
-    // On small screens, automatically close the off-canvas drawer
     if (typeof window !== 'undefined' && window.innerWidth < 980) {
       setSidebarOpen(false);
     }
@@ -40,10 +39,6 @@ export function App() {
 
   return (
     <div className="app-shell">
-      <div className="ambient ambient-one" />
-      <div className="ambient ambient-two" />
-      <div className="ambient ambient-three" />
-
       <Header
         activeView={activeView}
         onSelectView={setActiveView}
@@ -56,7 +51,6 @@ export function App() {
       <div className="workspace-shell">
         {activeView === 'consulta' ? (
           <>
-            {/* Backdrop para mobile quando o sidebar estiver aberto */}
             <div
               className={`sidebar-backdrop ${sidebarOpen ? 'is-visible' : ''}`}
               onClick={() => setSidebarOpen(false)}
@@ -79,16 +73,15 @@ export function App() {
               <>
                 {!workspace.currentResponse && !workspace.loading ? (
                   <section className="hero-copy">
-                    <div className="hero-kicker">
-                      <Icon name="sparkles" size={14} />
-                      <span>Contratações públicas · Rio de Janeiro</span>
-                    </div>
+                    <span className="section-eyebrow">
+                      ESTADO DO RIO DE JANEIRO · AUDITORIA E TRANSPARÊNCIA
+                    </span>
                     <h1>
-                      Consulte o acervo público por <em>evidência.</em>
+                      Sistema de Consulta e Evidência em <em>Contratações Públicas</em>
                     </h1>
                     <p>
-                      Faça perguntas em linguagem natural. O Adaptive RAG analisa a intenção,
-                      escolhe as bases necessárias e responde com as fontes recuperadas no corpus.
+                      Pesquise atos, editais, atas e contratos administrativos através do
+                      pipeline Adaptive RAG com fundamentação direta nas bases de dados oficiais.
                     </p>
                   </section>
                 ) : null}
