@@ -47,6 +47,7 @@ export function FollowUpComposer({ loading, onSubmit }: FollowUpComposerProps) {
         placeholder="Faça outra pergunta sobre este assunto..."
         aria-label="Pergunta de acompanhamento"
         rows={1}
+        maxLength={4000}
       />
       <button
         type="submit"

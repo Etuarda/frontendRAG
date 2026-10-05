@@ -1,5 +1,5 @@
 import { Icon } from '../../components/ui/Icon';
-import type { AppView } from '../../types';
+import type { AppView } from '../../types/app';
 
 interface ComoFuncionaPageProps {
   onNavigate: (view: AppView) => void;
@@ -34,8 +34,8 @@ export function ComoFuncionaPage({ onNavigate }: ComoFuncionaPageProps) {
           <Icon name="compass" size={20} className="how-step-icon" />
           <h2 className="how-step-title">Busca em Múltiplas Fontes</h2>
           <p className="how-step-desc">
-            O NEXO consulta simultaneamente editais do PNCP, dados do SIGA-RJ e decretos do Diário
-            Oficial, localizando trechos e cláusulas relevantes em segundos.
+            O NEXO busca trechos relevantes nas bases oficiais do acervo. Você pode conferir quais
+            são em Fontes oficiais.
           </p>
         </div>
 
@@ -54,8 +54,8 @@ export function ComoFuncionaPage({ onNavigate }: ComoFuncionaPageProps) {
           <Icon name="thumbs-up" size={20} className="how-step-icon" />
           <h2 className="how-step-title">Feedback e Aprendizado</h2>
           <p className="how-step-desc">
-            Ao final de cada resposta, você pode indicar com um clique se a informação foi útil. Seu
-            feedback aprimora continuamente a precisão do sistema.
+            Ao final de cada resposta, indique se ela foi útil. A avaliação fica registrada junto da
+            consulta no servidor.
           </p>
         </div>
       </div>

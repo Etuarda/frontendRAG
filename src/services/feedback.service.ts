@@ -1,32 +1,15 @@
-import { apiClient } from './api';
-import type { FeedbackPayload } from '../types';
+import { ApiError, apiRequest } from './api';
+import type { FeedbackRequest } from '../types/api';
 
-class FeedbackService {
-  /**
-   * Envia a avaliação da resposta (POST /api/v1/feedback).
-   */
-  async sendFeedback(payload: FeedbackPayload): Promise<{ success: boolean; message: string }> {
-    try {
-      const data = await apiClient<{ success?: boolean; message?: string }>('/api/v1/feedback', {
-        method: 'POST',
-        body: JSON.stringify({
-          ...payload,
-          created_at: payload.created_at || new Date().toISOString(),
-        }),
-      });
-
-      return {
-        success: data.success !== false,
-        message: data.message || 'Feedback registrado.',
-      };
-    } catch {
-      // Feedback é opcional: falha de rede não deve virar erro para o usuário.
-      return {
-        success: true,
-        message: 'Feedback registrado.',
-      };
+/** Registra a avaliação de uma resposta (POST /api/v1/feedback). Falhas chegam à tela como erro. */
+export async function sendFeedback(payload: FeedbackRequest): Promise<void> {
+  try {
+    await apiRequest<{ status: string }>('/api/v1/feedback', { method: 'POST', body: payload });
+  } catch (error) {
+    // 404 aqui significa que o backend não conhece este query_id.
+    if (error instanceof ApiError && error.status === 404) {
+      throw new ApiError('Esta consulta não foi encontrada no servidor.', 'http', 404, error.data);
     }
+    throw error;
   }
 }
-
-export const feedbackService = new FeedbackService();

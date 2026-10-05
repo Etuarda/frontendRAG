@@ -1,43 +1,40 @@
-import { useState } from 'react';
-import { CONTRATACOES_MOCK } from '../../utils/catalog';
+import { useMemo, useState } from 'react';
 import { Icon } from '../../components/ui/Icon';
-import type { ContratacaoRecord } from '../../types';
+import { EmptyState, ErrorState, LoadMore, LoadingState } from '../../components/ui/AsyncState';
+import { DetailList } from '../../components/catalog/DetailList';
+import { listContracts } from '../../services/contracts.service';
+import { usePaginatedList } from '../../hooks/usePaginatedList';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
+import { formatCurrency } from '../../utils/format';
+import type { ContratacaoRecord } from '../../types/api';
 
 interface ContratacoesPageProps {
   onSearchQuery: (query: string) => void;
 }
 
 export function ContratacoesPage({ onSearchQuery }: ContratacoesPageProps) {
-  const [search, setSearch] = useState('');
-  const [selectedOrgao, setSelectedOrgao] = useState('todos');
+  const [busca, setBusca] = useState('');
+  const [orgao, setOrgao] = useState('');
+  const debouncedBusca = useDebouncedValue(busca.trim());
+  const debouncedOrgao = useDebouncedValue(orgao.trim());
+  const filters = useMemo(
+    () => ({ busca: debouncedBusca, orgao: debouncedOrgao }),
+    [debouncedBusca, debouncedOrgao]
+  );
+  const list = usePaginatedList(listContracts, filters);
 
-  const filtered = CONTRATACOES_MOCK.filter((c) => {
-    const matchText =
-      c.objeto.toLowerCase().includes(search.toLowerCase()) ||
-      c.fornecedor.toLowerCase().includes(search.toLowerCase()) ||
-      c.numero_contrato.toLowerCase().includes(search.toLowerCase()) ||
-      c.orgao.toLowerCase().includes(search.toLowerCase());
-
-    const matchOrgao =
-      selectedOrgao === 'todos' || c.orgao.toLowerCase().includes(selectedOrgao.toLowerCase());
-
-    return matchText && matchOrgao;
-  });
-
-  const handleConsultarContrato = (contrato: ContratacaoRecord) => {
-    onSearchQuery(
-      `Quais são os detalhes, valores e termos do ${contrato.numero_contrato} celebrado pelo ${contrato.orgao}?`
-    );
+  const handleConsultar = (contrato: ContratacaoRecord) => {
+    const doOrgao = contrato.orgao ? ` celebrado por ${contrato.orgao}` : '';
+    onSearchQuery(`Quais são os detalhes do contrato ${contrato.numero_contrato}${doOrgao}?`);
   };
 
   return (
     <div className="page-content-wrapper">
       <header className="page-header">
         <span className="page-eyebrow">EXPLORAR ACERVO</span>
-        <h1 className="page-title">Contratações Públicas</h1>
+        <h1 className="page-title">Contratações públicas</h1>
         <p className="page-description">
-          Registros oficiais de instrumentos contratuais vigentes, atas de registro de preços e
-          homologações do Estado do Rio de Janeiro indexados no PNCP e SIGA-RJ.
+          Contratos registrados na base estruturada do acervo, com fornecedor, objeto e valor.
         </p>
       </header>
 
@@ -46,80 +43,75 @@ export function ContratacoesPage({ onSearchQuery }: ContratacoesPageProps) {
           <Icon name="search" size={15} />
           <input
             type="search"
-            placeholder="Buscar por objeto, fornecedor ou contrato..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Objeto, fornecedor, contrato ou órgão..."
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
             aria-label="Buscar contratações"
           />
         </div>
-
-        <div className="catalog-select-field">
-          <select
-            value={selectedOrgao}
-            onChange={(e) => setSelectedOrgao(e.target.value)}
-            aria-label="Filtrar por órgão contratante"
-          >
-            <option value="todos">Todos os órgãos</option>
-            <option value="Saúde">Saúde (SES-RJ / Fundação Saúde)</option>
-            <option value="Transporte">Transporte (SECTRAN)</option>
-            <option value="Educação">Educação (SEEDUC)</option>
-            <option value="Fazenda">Fazenda (SEFAZ-RJ)</option>
-            <option value="UERJ">UERJ</option>
-          </select>
-          <Icon name="chevron-down" size={13} className="select-icon" />
+        <div className="catalog-search-field">
+          <Icon name="building" size={15} />
+          <input
+            type="search"
+            placeholder="Filtrar por órgão..."
+            value={orgao}
+            onChange={(e) => setOrgao(e.target.value)}
+            aria-label="Filtrar por nome do órgão"
+          />
         </div>
       </div>
 
-      <div className="catalog-items-grid">
-        {filtered.map((item) => (
-          <article key={item.id} className="catalog-card">
-            <div className="catalog-card-header">
-              <span className="catalog-card-tag">{item.modalidade}</span>
-              <span className="catalog-status-pill">{item.status}</span>
-            </div>
+      {list.status === 'loading' ? <LoadingState label="Carregando contratações..." /> : null}
+      {list.status === 'error' && list.error ? (
+        <ErrorState message={list.error} onRetry={list.reload} />
+      ) : null}
+      {list.status === 'empty' ? <EmptyState title="Nenhuma contratação encontrada." /> : null}
 
-            <h2 className="catalog-card-title">{item.numero_contrato}</h2>
-            <p className="catalog-card-orgao">{item.orgao}</p>
+      {list.status === 'success' ? (
+        <>
+          <div className="catalog-items-grid">
+            {list.items.map((item) => (
+              <article key={item.id} className="catalog-card">
+                <div className="catalog-card-header">
+                  <span className="catalog-card-tag">{item.fonte_oficial}</span>
+                  {item.esfera ? <span className="catalog-status-pill">{item.esfera}</span> : null}
+                </div>
 
-            <p className="catalog-card-objeto">{item.objeto}</p>
+                <h2 className="catalog-card-title">{item.numero_contrato}</h2>
+                {item.orgao ? <p className="catalog-card-orgao">{item.orgao}</p> : null}
+                {item.objeto ? <p className="catalog-card-objeto">{item.objeto}</p> : null}
 
-            <div className="catalog-card-details">
-              <div className="detail-row">
-                <span className="detail-label">Fornecedor:</span>
-                <span className="detail-value">{item.fornecedor}</span>
-              </div>
-              <div className="detail-row">
-                <span className="detail-label">Valor Homologado:</span>
-                <span className="detail-value-price">
-                  {item.valor_global.toLocaleString('pt-BR', {
-                    style: 'currency',
-                    currency: 'BRL',
-                  })}
-                </span>
-              </div>
-              <div className="detail-row">
-                <span className="detail-label">Homologação:</span>
-                <span className="detail-value">{item.data_homologacao}</span>
-              </div>
-              <div className="detail-row">
-                <span className="detail-label">Fonte Oficial:</span>
-                <span className="detail-value">{item.fonte_oficial}</span>
-              </div>
-            </div>
+                <DetailList
+                  items={[
+                    { label: 'Fornecedor', value: item.fornecedor },
+                    {
+                      label: 'Valor global',
+                      value: item.valor_global === null ? null : formatCurrency(item.valor_global),
+                    },
+                    { label: 'Município', value: item.municipio },
+                    { label: 'Modalidade', value: item.modalidade },
+                    { label: 'Situação', value: item.status },
+                    { label: 'Homologação', value: item.data_homologacao },
+                  ]}
+                />
 
-            <div className="catalog-card-actions">
-              <button
-                type="button"
-                className="btn-card-action"
-                onClick={() => handleConsultarContrato(item)}
-              >
-                <span>Consultar no NEXO</span>
-                <Icon name="arrow-up-right" size={14} />
-              </button>
-            </div>
-          </article>
-        ))}
-      </div>
+                <div className="catalog-card-actions">
+                  <button type="button" className="btn-card-action" onClick={() => handleConsultar(item)}>
+                    <span>Consultar no NEXO</span>
+                    <Icon name="arrow-up-right" size={14} />
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+          <LoadMore
+            hasMore={list.hasMore}
+            loading={list.loadingMore}
+            error={list.loadMoreError}
+            onLoadMore={list.loadMore}
+          />
+        </>
+      ) : null}
     </div>
   );
 }

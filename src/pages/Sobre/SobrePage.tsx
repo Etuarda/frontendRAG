@@ -1,4 +1,5 @@
 import { Icon } from '../../components/ui/Icon';
+import { ProjectSummaryPanel } from '../../components/project/ProjectSummaryPanel';
 import nexoLogo from '../../assets/nexo.png';
 import ecoaLogo from '../../assets/ecoaPucRio.png';
 
@@ -42,8 +43,7 @@ export function SobrePage() {
             públicos, auditores de controle externo, pregoeiros, jornalistas de dados e cidadãos
             consultam o acervo de contratações públicas fluminenses. Em vez de navegar por portais
             fragmentados e ler editais extensos manualmente, o usuário pode fazer perguntas em
-            linguagem natural e receber respostas fundamentadas, com indicação precisa das fontes e
-            sem alucinações.
+            linguagem natural e receber respostas fundamentadas, com indicação das fontes usadas.
           </p>
 
           <h2>O Contexto do Grande Desafio</h2>
@@ -56,14 +56,14 @@ export function SobrePage() {
             uma experiência de produto de nível de produção.
           </p>
 
-          <h2>Aplicação nas Contratações do Rio de Janeiro</h2>
+          <h2>O acervo consultado</h2>
           <p>
-            O acervo cobre editais, atas de sessões de pregão eletrônico, contratos bilaterais e
-            normativos regulamentares da Lei Federal nº 14.133/2021 no âmbito dos órgãos estaduais
-            do Rio de Janeiro (como SES-RJ, SECTRAN, SEEDUC, UERJ e CGE-RJ), integrados a partir do
-            Portal Nacional de Contratações Públicas (PNCP), SIGA-RJ e Diário Oficial do Estado (DOERJ).
+            Os números abaixo vêm do servidor e mostram a versão do acervo que responde às consultas.
+            A lista completa de bases está em Fontes oficiais e em Transparência da IA.
           </p>
         </div>
+
+        <ProjectSummaryPanel compact />
 
         <div className="about-pillars-grid">
           <div className="about-pillar-item">

@@ -4,8 +4,10 @@ import { cpSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 
 const LOADER = /(<!-- pages-loader -->)[\s\S]*?(\s*<!-- \/pages-loader -->)/;
 
+// Em docs/ só o build é substituído; a documentação (.md) que mora ali é preservada.
 rmSync('assets', { recursive: true, force: true });
-rmSync('docs', { recursive: true, force: true });
+rmSync('docs/assets', { recursive: true, force: true });
+rmSync('docs/index.html', { force: true });
 
 cpSync('dist/assets', 'assets', { recursive: true });
 cpSync('dist', 'docs', { recursive: true });

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import type { AppView } from '../../types';
+import type { AppView } from '../../types/app';
+import { useHealth, type HealthStatus } from '../../hooks/useHealth';
 import { Icon, type IconName } from '../ui/Icon';
 import nexoLogo from '../../assets/nexo.png';
 import nexoMark from '../../assets/nexo-mark.png';
@@ -10,7 +11,6 @@ interface SidebarProps {
   activeView: AppView;
   onSelectView: (view: AppView) => void;
   onNewQuery: () => void;
-  historyCount?: number;
   mobileOpen: boolean;
   onCloseMobile: () => void;
   collapsed: boolean;
@@ -54,17 +54,23 @@ const NAV_SECTIONS: NavSection[] = [
   },
 ];
 
+const HEALTH_LABELS: Record<HealthStatus, string> = {
+  checking: 'Verificando backend...',
+  online: 'Backend online',
+  offline: 'Backend offline',
+};
+
 export function Sidebar({
   activeView,
   onSelectView,
   onNewQuery,
-  historyCount = 0,
   mobileOpen,
   onCloseMobile,
   collapsed,
   onToggleCollapsed,
 }: SidebarProps) {
   const [logoFailed, setLogoFailed] = useState(false);
+  const health = useHealth();
   const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   // Leva o foco para dentro do drawer, para teclado e leitor de tela seguirem o menu.
@@ -174,9 +180,6 @@ export function Sidebar({
                   >
                     <Icon name={item.icon} size={16} />
                     <span className="sidebar-label">{item.label}</span>
-                    {item.id === 'historico' && historyCount > 0 ? (
-                      <span className="sidebar-badge">{historyCount}</span>
-                    ) : null}
                   </button>
                 ))}
               </div>
@@ -184,9 +187,9 @@ export function Sidebar({
           ))}
         </nav>
 
-        <div className="sidebar-footer">
-          <span className="status-dot dot-success" />
-          <span className="sidebar-label">Sistema online</span>
+        <div className="sidebar-footer" role="status" title={HEALTH_LABELS[health]}>
+          <span className={`status-dot dot-${health}`} aria-hidden="true" />
+          <span className="sidebar-label">{HEALTH_LABELS[health]}</span>
         </div>
       </aside>
     </>

@@ -1,75 +1,58 @@
 import { useEffect, useRef } from 'react';
-import type { AppView, Conversation } from '../../types';
+import type { AppView, Avaliacao, ConversationTurn } from '../../types/app';
 import { SearchComposer } from '../../components/search/SearchComposer';
 import { FollowUpComposer } from '../../components/search/FollowUpComposer';
 import { ConversationTurnView } from '../../components/results/ConversationTurnView';
 import { Icon } from '../../components/ui/Icon';
 
 interface ConsultaPageProps {
-  conversation: Conversation | null;
+  turns: ConversationTurn[];
   pendingQuery: string | null;
   loading: boolean;
   error: string | null;
-  fonteFilter: string;
-  onFonteChange: (fonte: string) => void;
-  searchStrategy: 'automatica' | 'hibrida' | 'normativa';
-  onStrategyChange: (strategy: 'automatica' | 'hibrida' | 'normativa') => void;
   onSubmitQuery: (query: string) => void;
-  onRateTurn: (turnId: string, useful: boolean) => void;
+  onRated: (queryId: string, avaliacao: Avaliacao) => void;
   onNewConversation: () => void;
   onNavigate: (view: AppView) => void;
 }
 
 export function ConsultaPage({
-  conversation,
+  turns,
   pendingQuery,
   loading,
   error,
-  fonteFilter,
-  onFonteChange,
-  searchStrategy,
-  onStrategyChange,
   onSubmitQuery,
-  onRateTurn,
+  onRated,
   onNewConversation,
   onNavigate,
 }: ConsultaPageProps) {
   const latestRef = useRef<HTMLDivElement>(null);
-  const turnCount = conversation?.turns.length ?? 0;
-  const hasThread = turnCount > 0 || pendingQuery !== null;
+  const hasThread = turns.length > 0 || pendingQuery !== null;
 
   // Leva o usuário até a pergunta nova, em vez de deixá-lo no topo da conversa.
   useEffect(() => {
-    if (turnCount > 1 || pendingQuery) {
+    if (turns.length > 1 || pendingQuery) {
       latestRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
-  }, [turnCount, pendingQuery]);
+  }, [turns.length, pendingQuery]);
 
   if (!hasThread) {
     return (
       <div className="consulta-page-container">
-        <SearchComposer
-          loading={loading}
-          onSubmit={onSubmitQuery}
-          onNavigate={onNavigate}
-          fonteFilter={fonteFilter}
-          onFonteChange={onFonteChange}
-          searchStrategy={searchStrategy}
-          onStrategyChange={onStrategyChange}
-        />
-        {error ? <ErrorNotice message={error} /> : null}
+        <SearchComposer loading={loading} onSubmit={onSubmitQuery} onNavigate={onNavigate} />
+        {error ? <QueryError message={error} /> : null}
       </div>
     );
   }
 
-  const turns = conversation?.turns ?? [];
+  const title = turns[0]?.response.query ?? pendingQuery;
 
   return (
     <div className="conversation-page">
       <header className="conversation-header">
         <div className="conversation-header-copy">
           <span className="result-badge-label">CONVERSA</span>
-          <h1 className="conversation-title">{conversation?.title ?? pendingQuery}</h1>
+          <h1 className="conversation-title">{title}</h1>
         </div>
         <button
           type="button"
@@ -84,8 +67,11 @@ export function ConsultaPage({
 
       <div className="conversation-thread" aria-live="polite">
         {turns.map((turn, index) => (
-          <div key={turn.id} ref={index === turns.length - 1 && !pendingQuery ? latestRef : null}>
-            <ConversationTurnView turn={turn} onRate={onRateTurn} />
+          <div
+            key={turn.response.query_id}
+            ref={index === turns.length - 1 && !pendingQuery ? latestRef : null}
+          >
+            <ConversationTurnView turn={turn} onRated={onRated} />
           </div>
         ))}
 
@@ -94,21 +80,21 @@ export function ConsultaPage({
             <div className="turn-question">
               <p>{pendingQuery}</p>
             </div>
-            <div className="processing-indicator-box">
+            <div className="processing-indicator-box" role="status">
               <div className="processing-spinner">
                 <Icon name="refresh-cw" size={20} className="spin-animation" />
               </div>
               <div className="processing-text-group">
                 <h2 className="processing-title">Consultando fontes oficiais...</h2>
                 <p className="processing-sub">
-                  Buscando e cruzando evidências em editais, atas e contratos vigentes do Rio de Janeiro.
+                  A busca nas evidências pode levar alguns segundos.
                 </p>
               </div>
             </div>
           </div>
         ) : null}
 
-        {error && !loading ? <ErrorNotice message={error} /> : null}
+        {error && !loading ? <QueryError message={error} /> : null}
       </div>
 
       <div className="conversation-composer-dock">
@@ -118,7 +104,7 @@ export function ConsultaPage({
   );
 }
 
-function ErrorNotice({ message }: { message: string }) {
+function QueryError({ message }: { message: string }) {
   return (
     <div className="error-notice-card" role="alert">
       <Icon name="info" size={18} />

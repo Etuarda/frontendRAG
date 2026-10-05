@@ -1,36 +1,50 @@
-import { useState } from 'react';
-import { ORGAOS_MOCK } from '../../utils/catalog';
+import { useMemo, useState } from 'react';
 import { Icon } from '../../components/ui/Icon';
-import type { OrgaoRecord } from '../../types';
+import { EmptyState, ErrorState, LoadMore, LoadingState } from '../../components/ui/AsyncState';
+import { DetailList } from '../../components/catalog/DetailList';
+import { listOrganizations } from '../../services/organizations.service';
+import { usePaginatedList } from '../../hooks/usePaginatedList';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
+import { formatCurrency, formatNumber } from '../../utils/format';
+import type { OrgaoRecord } from '../../types/api';
 
 interface OrgaosPageProps {
   onSearchQuery: (query: string) => void;
 }
 
-export function OrgaosPage({ onSearchQuery }: OrgaosPageProps) {
-  const [search, setSearch] = useState('');
-
-  const filtered = ORGAOS_MOCK.filter(
-    (o) =>
-      o.nome.toLowerCase().includes(search.toLowerCase()) ||
-      o.sigla.toLowerCase().includes(search.toLowerCase()) ||
-      o.principais_categorias.some((cat) => cat.toLowerCase().includes(search.toLowerCase()))
+function TagList({ title, values }: { title: string; values: string[] }) {
+  if (values.length === 0) return null;
+  return (
+    <div className="orgao-tags-section">
+      <span className="detail-label">{title}</span>
+      <div className="orgao-tags-list">
+        {values.map((value) => (
+          <span key={value} className="orgao-tag-item">
+            {value}
+          </span>
+        ))}
+      </div>
+    </div>
   );
+}
 
-  const handleConsultarOrgao = (orgao: OrgaoRecord) => {
-    onSearchQuery(
-      `Quais são as principais contratações, editais e compras vigentes da ${orgao.sigla} (${orgao.nome}) em 2025?`
-    );
+export function OrgaosPage({ onSearchQuery }: OrgaosPageProps) {
+  const [busca, setBusca] = useState('');
+  const debouncedBusca = useDebouncedValue(busca.trim());
+  const filters = useMemo(() => ({ busca: debouncedBusca }), [debouncedBusca]);
+  const list = usePaginatedList(listOrganizations, filters);
+
+  const handleConsultar = (orgao: OrgaoRecord) => {
+    onSearchQuery(`Quais são as principais contratações de ${orgao.nome}?`);
   };
 
   return (
     <div className="page-content-wrapper">
       <header className="page-header">
-        <span className="page-eyebrow">ADMINISTRAÇÃO PÚBLICA RJ</span>
-        <h1 className="page-title">Órgãos e Entidades Contratantes</h1>
+        <span className="page-eyebrow">ADMINISTRAÇÃO PÚBLICA</span>
+        <h1 className="page-title">Órgãos contratantes</h1>
         <p className="page-description">
-          Explore os órgãos estaduais do Rio de Janeiro, secretarias de governo, fundações e
-          autarquias com histórico de licitações e contratações indexadas no sistema.
+          Órgãos com contratações na base estruturada, com totais calculados pelo servidor.
         </p>
       </header>
 
@@ -39,59 +53,70 @@ export function OrgaosPage({ onSearchQuery }: OrgaosPageProps) {
           <Icon name="search" size={15} />
           <input
             type="search"
-            placeholder="Buscar por sigla, nome da secretaria ou área de atuação..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar pelo nome do órgão..."
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
             aria-label="Buscar órgão contratante"
           />
         </div>
       </div>
 
-      <div className="catalog-items-grid">
-        {filtered.map((item) => (
-          <article key={item.sigla} className="catalog-card">
-            <div className="catalog-card-header">
-              <span className="orgao-sigla-badge">{item.sigla}</span>
-              <span className="orgao-esfera-tag">{item.esfera}</span>
-            </div>
+      {list.status === 'loading' ? <LoadingState label="Carregando órgãos..." /> : null}
+      {list.status === 'error' && list.error ? (
+        <ErrorState message={list.error} onRetry={list.reload} />
+      ) : null}
+      {list.status === 'empty' ? <EmptyState title="Nenhum órgão encontrado." /> : null}
 
-            <h2 className="catalog-card-title">{item.nome}</h2>
+      {list.status === 'success' ? (
+        <>
+          <div className="catalog-items-grid">
+            {list.items.map((item) => (
+              <article key={item.cnpj ?? item.nome} className="catalog-card">
+                <div className="catalog-card-header">
+                  {item.sigla ? <span className="orgao-sigla-badge">{item.sigla}</span> : <span />}
+                  {item.esfera ? <span className="orgao-esfera-tag">{item.esfera}</span> : null}
+                </div>
 
-            <div className="orgao-metrics-grid">
-              <div className="orgao-metric-box">
-                <span className="metric-num">{item.total_contratacoes}</span>
-                <span className="metric-lbl">Contratações no acervo</span>
-              </div>
-              <div className="orgao-metric-box">
-                <span className="metric-num-highlight">{item.valor_total_estimado}</span>
-                <span className="metric-lbl">Volume estimado</span>
-              </div>
-            </div>
+                <h2 className="catalog-card-title">{item.nome}</h2>
 
-            <div className="orgao-tags-section">
-              <span className="detail-label">Principais compras e serviços:</span>
-              <div className="orgao-tags-list">
-                {item.principais_categorias.map((cat, i) => (
-                  <span key={i} className="orgao-tag-item">
-                    {cat}
-                  </span>
-                ))}
-              </div>
-            </div>
+                <div className="orgao-metrics-grid">
+                  <div className="orgao-metric-box">
+                    <span className="metric-num">{formatNumber(item.total_contratacoes)}</span>
+                    <span className="metric-lbl">Contratações no acervo</span>
+                  </div>
+                  <div className="orgao-metric-box">
+                    <span className="metric-num-highlight">{formatCurrency(item.valor_total)}</span>
+                    <span className="metric-lbl">Valor total</span>
+                  </div>
+                </div>
 
-            <div className="catalog-card-actions">
-              <button
-                type="button"
-                className="btn-card-action"
-                onClick={() => handleConsultarOrgao(item)}
-              >
-                <span>Consultar contratações deste órgão</span>
-                <Icon name="arrow-up-right" size={14} />
-              </button>
-            </div>
-          </article>
-        ))}
-      </div>
+                <DetailList
+                  items={[
+                    { label: 'Município', value: item.municipio },
+                    { label: 'CNPJ', value: item.cnpj },
+                  ]}
+                />
+
+                <TagList title="Principais fornecedores" values={item.principais_fornecedores} />
+                <TagList title="Principais categorias" values={item.principais_categorias} />
+
+                <div className="catalog-card-actions">
+                  <button type="button" className="btn-card-action" onClick={() => handleConsultar(item)}>
+                    <span>Consultar contratações deste órgão</span>
+                    <Icon name="arrow-up-right" size={14} />
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+          <LoadMore
+            hasMore={list.hasMore}
+            loading={list.loadingMore}
+            error={list.loadMoreError}
+            onLoadMore={list.loadMore}
+          />
+        </>
+      ) : null}
     </div>
   );
 }

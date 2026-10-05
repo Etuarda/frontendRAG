@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import type { AppView, Conversation } from '../types';
+import type { HistoryItem } from '../types/api';
+import type { AppView } from '../types/app';
 import { useRagWorkspace } from '../hooks/useRagWorkspace';
-import { useHistory } from '../hooks/useHistory';
 import { useSidebar } from '../hooks/useSidebar';
 import { Sidebar, SIDEBAR_ID } from '../components/layout/Sidebar';
 import { Footer } from '../components/layout/Footer';
@@ -23,15 +23,14 @@ export function App() {
   const sidebar = useSidebar();
 
   const workspace = useRagWorkspace();
-  const { conversations } = useHistory();
 
   const handleNewQuery = () => {
     workspace.startNewConversation();
     setActiveView('consulta');
   };
 
-  const handleOpenConversation = (conversation: Conversation) => {
-    workspace.openConversation(conversation);
+  const handleOpenHistoryItem = (item: HistoryItem) => {
+    workspace.openHistoryItem(item);
     setActiveView('consulta');
   };
 
@@ -47,16 +46,12 @@ export function App() {
       case 'consulta':
         return (
           <ConsultaPage
-            conversation={workspace.conversation}
+            turns={workspace.turns}
             pendingQuery={workspace.pendingQuery}
             loading={workspace.loading}
             error={workspace.error}
-            fonteFilter={workspace.fonteFilter}
-            onFonteChange={workspace.setFonteFilter}
-            searchStrategy={workspace.searchStrategy}
-            onStrategyChange={workspace.setSearchStrategy}
             onSubmitQuery={workspace.submitQuery}
-            onRateTurn={workspace.rateTurn}
+            onRated={workspace.markRated}
             onNewConversation={handleNewQuery}
             onNavigate={setActiveView}
           />
@@ -65,7 +60,7 @@ export function App() {
       case 'historico':
         return (
           <HistoricoPage
-            onOpenConversation={handleOpenConversation}
+            onOpenItem={handleOpenHistoryItem}
             onNewQuery={handleNewQuery}
           />
         );
@@ -135,7 +130,6 @@ export function App() {
         activeView={activeView}
         onSelectView={setActiveView}
         onNewQuery={handleNewQuery}
-        historyCount={conversations.length}
         mobileOpen={sidebar.mobileOpen}
         onCloseMobile={sidebar.closeMobile}
         collapsed={sidebar.collapsed}

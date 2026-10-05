@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 
@@ -21,5 +22,11 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 5173,
     strictPort: true,
+  },
+  test: {
+    environment: 'jsdom',
+    setupFiles: ['./src/test/setup.ts'],
+    // Endereço fictício: nos testes o fetch é substituído, nenhuma requisição sai da máquina.
+    env: { VITE_API_BASE_URL: 'http://api.test' },
   },
 });

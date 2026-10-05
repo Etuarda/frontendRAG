@@ -1,32 +1,53 @@
 import { useState, type FormEvent, type KeyboardEvent } from 'react';
 import { Icon } from '../ui/Icon';
-import { ATALHOS_INICIAIS, type ShortcutItem } from '../../utils/catalog';
-import type { AppView } from '../../types';
+import type { AppView } from '../../types/app';
 
 interface SearchComposerProps {
   loading: boolean;
   onSubmit: (query: string) => void;
   onNavigate: (view: AppView) => void;
-  fonteFilter: string;
-  onFonteChange: (fonte: string) => void;
-  searchStrategy: 'automatica' | 'hibrida' | 'normativa';
-  onStrategyChange: (strategy: 'automatica' | 'hibrida' | 'normativa') => void;
 }
 
-export function SearchComposer({
-  loading,
-  onSubmit,
-  onNavigate,
-  fonteFilter,
-  onFonteChange,
-  searchStrategy,
-  onStrategyChange,
-}: SearchComposerProps) {
+interface Shortcut {
+  view: AppView;
+  category: string;
+  title: string;
+  description: string;
+}
+
+// Atalhos só navegam para as páginas de Explorar; os dados vêm da API em cada página.
+const SHORTCUTS: Shortcut[] = [
+  {
+    view: 'contratacoes',
+    category: 'Contratações',
+    title: 'Explorar contratações',
+    description: 'Contratos, fornecedores e valores registrados no acervo',
+  },
+  {
+    view: 'documentos',
+    category: 'Documentos',
+    title: 'Pesquisar documentos',
+    description: 'Normativos, contratos, atas de registro e PCA',
+  },
+  {
+    view: 'orgaos',
+    category: 'Órgãos',
+    title: 'Consultar um órgão',
+    description: 'Total contratado e principais fornecedores por órgão',
+  },
+  {
+    view: 'fontes',
+    category: 'Fontes oficiais',
+    title: 'Explorar fontes oficiais',
+    description: 'Bases oficiais que alimentam as respostas',
+  },
+];
+
+export function SearchComposer({ loading, onSubmit, onNavigate }: SearchComposerProps) {
   const [query, setQuery] = useState('');
-  const [filterAno, setFilterAno] = useState('2025');
 
   const handleSubmit = (e?: FormEvent) => {
-    if (e) e.preventDefault();
+    e?.preventDefault();
     const clean = query.trim();
     if (!clean || loading) return;
     onSubmit(clean);
@@ -36,15 +57,6 @@ export function SearchComposer({
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSubmit();
-    }
-  };
-
-  const handleShortcutClick = (item: ShortcutItem) => {
-    if (item.actionView) {
-      onNavigate(item.actionView);
-    } else {
-      setQuery(item.query);
-      onSubmit(item.query);
     }
   };
 
@@ -64,84 +76,33 @@ export function SearchComposer({
             placeholder="Pergunte sobre contratos, editais, órgãos ou atas..."
             aria-label="Pergunta sobre contratações públicas"
             rows={2}
+            maxLength={4000}
             disabled={loading}
           />
         </div>
 
-        <div className="composer-controls-bar">
-          <div className="composer-controls-left">
-            <div className="control-pill-select" title="Filtrar por fonte de dados">
-              <Icon name="compass" size={14} />
-              <select
-                value={fonteFilter}
-                onChange={(e) => onFonteChange(e.target.value)}
-                disabled={loading}
-                aria-label="Selecionar fonte de dados"
-              >
-                <option value="todas">Todas as fontes</option>
-                <option value="pncp">PNCP (Nacional)</option>
-                <option value="siga-rj">SIGA-RJ (Estadual)</option>
-                <option value="doerj">DOERJ (Diário Oficial)</option>
-              </select>
-              <Icon name="chevron-down" size={12} className="select-arrow" />
-            </div>
-
-            <div className="control-pill-select" title="Filtrar por ano">
-              <Icon name="sliders" size={14} />
-              <select
-                value={filterAno}
-                onChange={(e) => setFilterAno(e.target.value)}
-                disabled={loading}
-                aria-label="Filtrar por ano de contratação"
-              >
-                <option value="2025">Exercício 2025</option>
-                <option value="2024">Exercício 2024</option>
-                <option value="todos">Todos os anos</option>
-              </select>
-              <Icon name="chevron-down" size={12} className="select-arrow" />
-            </div>
-
-            <div className="control-pill-select" title="Estratégia de busca">
-              <Icon name="sparkles" size={14} />
-              <select
-                value={searchStrategy}
-                onChange={(e) =>
-                  onStrategyChange(e.target.value as 'automatica' | 'hibrida' | 'normativa')
-                }
-                disabled={loading}
-                aria-label="Selecionar estratégia de busca"
-              >
-                <option value="automatica">Busca Inteligente</option>
-                <option value="hibrida">Acervo Completo</option>
-                <option value="normativa">Foco em Legislação</option>
-              </select>
-              <Icon name="chevron-down" size={12} className="select-arrow" />
-            </div>
-          </div>
-
-          <div className="composer-controls-right">
-            <button
-              type="submit"
-              className="btn-composer-send"
-              disabled={loading || !query.trim()}
-              aria-label={loading ? 'Pesquisando...' : 'Enviar consulta'}
-              title="Pressione Enter para enviar"
-            >
-              <Icon name="arrow-right" size={16} />
-            </button>
-          </div>
+        <div className="composer-controls-bar composer-controls-end">
+          <button
+            type="submit"
+            className="btn-composer-send"
+            disabled={loading || !query.trim()}
+            aria-label={loading ? 'Pesquisando...' : 'Enviar consulta'}
+            title="Pressione Enter para enviar"
+          >
+            <Icon name="arrow-right" size={16} />
+          </button>
         </div>
       </form>
 
       <div className="composer-shortcuts-section">
-        <span className="shortcuts-label">Atalhos sugeridos</span>
+        <span className="shortcuts-label">Atalhos</span>
         <div className="composer-shortcuts-grid">
-          {ATALHOS_INICIAIS.map((item) => (
+          {SHORTCUTS.map((item) => (
             <button
-              key={item.id}
+              key={item.view}
               type="button"
               className="shortcut-card"
-              onClick={() => handleShortcutClick(item)}
+              onClick={() => onNavigate(item.view)}
               aria-label={`Atalho: ${item.title}`}
             >
               <div className="shortcut-icon-row">
