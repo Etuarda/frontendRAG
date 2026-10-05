@@ -34,7 +34,6 @@ export function OrgaosPage({ onSearchQuery }: OrgaosPageProps) {
         </p>
       </header>
 
-      {/* Busca rápida de órgãos */}
       <div className="catalog-filter-bar">
         <div className="catalog-search-field full-width">
           <Icon name="search" size={15} />
@@ -48,7 +47,6 @@ export function OrgaosPage({ onSearchQuery }: OrgaosPageProps) {
         </div>
       </div>
 
-      {/* Grid de Órgãos */}
       <div className="catalog-items-grid">
         {filtered.map((item) => (
           <article key={item.sigla} className="catalog-card">

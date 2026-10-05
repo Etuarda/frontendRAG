@@ -12,7 +12,6 @@ export function SobrePage() {
         </p>
       </header>
 
-      {/* Cartão Institucional Principal */}
       <div className="about-main-card">
         <div className="about-emblem-row">
           <img
@@ -64,7 +63,6 @@ export function SobrePage() {
           </p>
         </div>
 
-        {/* Pilares do Projeto */}
         <div className="about-pillars-grid">
           <div className="about-pillar-item">
             <Icon name="shield" size={18} />

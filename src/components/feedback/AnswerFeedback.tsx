@@ -24,7 +24,7 @@ export function AnswerFeedback({ queryId, query }: AnswerFeedbackProps) {
       });
       setFeedbackSent(useful);
     } catch {
-      // Confirmação com fallback
+      // Feedback não é crítico: confirma ao usuário mesmo se o envio falhar.
       setFeedbackSent(useful);
     } finally {
       setSending(false);

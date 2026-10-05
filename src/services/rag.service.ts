@@ -2,6 +2,7 @@ import { apiClient, API_BASE_URL } from './api';
 import type { RagQueryRequest, RagResponse } from '../types';
 import { mockQuery } from '../mocks/rag.mock';
 
+// VITE_USE_MOCKS=true força dados simulados, útil para desenvolver sem backend.
 const USE_MOCKS = String(import.meta.env.VITE_USE_MOCKS ?? 'false') === 'true';
 
 class RagService {
@@ -17,7 +18,7 @@ class RagService {
       });
       return data;
     } catch {
-      // Se a API falhar ou estiver offline no ambiente de demonstração, usa o mock rico
+      // Sem backend (ex.: GitHub Pages), responde com mock para a demo seguir utilizável.
       return mockQuery(payload.query);
     }
   }

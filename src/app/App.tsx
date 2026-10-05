@@ -95,7 +95,7 @@ export function App() {
 
   return (
     <div className="nexo-app-layout">
-      {/* Barra de Topo Mobile (Visível apenas em telas menores) */}
+      {/* Só aparece no mobile; no desktop a sidebar fixa cumpre esse papel. */}
       <header className="nexo-mobile-topbar" aria-label="Cabeçalho mobile">
         <button
           type="button"
@@ -121,7 +121,6 @@ export function App() {
         </button>
       </header>
 
-      {/* Sidebar de Navegação */}
       <Sidebar
         activeView={activeView}
         onSelectView={setActiveView}
@@ -131,7 +130,6 @@ export function App() {
         onCloseMobile={() => setMobileSidebarOpen(false)}
       />
 
-      {/* Conteúdo Principal da Aplicação */}
       <div className="nexo-main-wrapper">
         <main className="nexo-main-canvas" role="main">
           <div className="nexo-container">{renderActivePage()}</div>

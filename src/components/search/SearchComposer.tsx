@@ -50,13 +50,11 @@ export function SearchComposer({
 
   return (
     <div className="search-composer-wrapper">
-      {/* Cabeçalho acolhedor e focado */}
       <div className="composer-header">
         <span className="composer-eyebrow">Consulta inteligente</span>
         <h1 className="composer-title">O que você quer consultar?</h1>
       </div>
 
-      {/* Caixa do Composer Ampla (Estilo Perplexity / IA Moderna) */}
       <form className="ai-composer-box" onSubmit={handleSubmit}>
         <div className="composer-input-area">
           <textarea
@@ -70,10 +68,8 @@ export function SearchComposer({
           />
         </div>
 
-        {/* Barra de Controles Discretos do Composer */}
         <div className="composer-controls-bar">
           <div className="composer-controls-left">
-            {/* Controle 1: Fonte Oficial */}
             <div className="control-pill-select" title="Filtrar por fonte de dados">
               <Icon name="compass" size={14} />
               <select
@@ -90,7 +86,6 @@ export function SearchComposer({
               <Icon name="chevron-down" size={12} className="select-arrow" />
             </div>
 
-            {/* Controle 2: Filtro de Exercício */}
             <div className="control-pill-select" title="Filtrar por ano">
               <Icon name="sliders" size={14} />
               <select
@@ -106,7 +101,6 @@ export function SearchComposer({
               <Icon name="chevron-down" size={12} className="select-arrow" />
             </div>
 
-            {/* Controle 3: Estratégia de Busca Discreta */}
             <div className="control-pill-select" title="Estratégia de busca">
               <Icon name="sparkles" size={14} />
               <select
@@ -139,7 +133,6 @@ export function SearchComposer({
         </div>
       </form>
 
-      {/* Atalhos Rápidos Abaixo do Campo */}
       <div className="composer-shortcuts-section">
         <span className="shortcuts-label">Atalhos sugeridos</span>
         <div className="composer-shortcuts-grid">

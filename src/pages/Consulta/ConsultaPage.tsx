@@ -30,7 +30,6 @@ export function ConsultaPage({
 }: ConsultaPageProps) {
   return (
     <div className="consulta-page-container">
-      {/* Exibe o composer caso não haja resposta ativa */}
       {!currentResponse ? (
         <SearchComposer
           loading={loading}
@@ -43,7 +42,6 @@ export function ConsultaPage({
         />
       ) : null}
 
-      {/* Estado de Carregamento Limpo e Humanizado */}
       {loading ? (
         <div className="processing-indicator-box" aria-live="polite">
           <div className="processing-spinner">
@@ -58,7 +56,6 @@ export function ConsultaPage({
         </div>
       ) : null}
 
-      {/* Banner de Erro Humanizado */}
       {error && !loading ? (
         <div className="error-notice-card" role="alert">
           <Icon name="info" size={18} />
@@ -69,7 +66,6 @@ export function ConsultaPage({
         </div>
       ) : null}
 
-      {/* Apresentação do Resultado */}
       {!loading && currentResponse ? (
         <QueryResultView response={currentResponse} onNewSearch={onResetResponse} />
       ) : null}

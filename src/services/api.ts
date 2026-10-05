@@ -12,6 +12,10 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * Ponto único de acesso à API: aplica a URL base e converte qualquer falha
+ * em ApiError com mensagem pronta para exibir na interface.
+ */
 export async function apiClient<T>(
   endpoint: string,
   options?: RequestInit

@@ -12,14 +12,13 @@ interface QueryResultViewProps {
 export function QueryResultView({ response, onNewSearch }: QueryResultViewProps) {
   const [detailsOpen, setDetailsOpen] = useState(false);
 
-  // Divide o texto da resposta em parágrafos para leitura limpa
+  // A API separa parágrafos por linha em branco; um <p> por bloco facilita a leitura.
   const paragraphs = response.answer
     ? response.answer.split('\n\n').filter((p) => p.trim().length > 0)
     : [];
 
   return (
     <div className="query-result-container">
-      {/* 1. Pergunta Realizada */}
       <section className="result-header-section">
         <div className="result-header-top">
           <span className="result-badge-label">CONSULTA REALIZADA</span>
@@ -36,7 +35,7 @@ export function QueryResultView({ response, onNewSearch }: QueryResultViewProps)
         <h1 className="result-query-title">“{response.query}”</h1>
       </section>
 
-      {/* Caso de recusa humanizada */}
+      {/* Sem evidência suficiente, explicamos a recusa em vez de arriscar uma resposta. */}
       {response.is_refusal ? (
         <div className="refusal-box">
           <div className="refusal-icon-title">
@@ -63,7 +62,6 @@ export function QueryResultView({ response, onNewSearch }: QueryResultViewProps)
         </div>
       ) : (
         <>
-          {/* 2. Resposta Principal */}
           <section className="result-answer-section" aria-labelledby="answer-heading">
             <h2 id="answer-heading" className="visually-hidden">
               Resposta fundamentada
@@ -75,7 +73,6 @@ export function QueryResultView({ response, onNewSearch }: QueryResultViewProps)
             </div>
           </section>
 
-          {/* 3. Fontes Utilizadas */}
           {response.sources_used.length > 0 ? (
             <section className="result-sources-section" aria-labelledby="sources-heading">
               <h2 id="sources-heading" className="sources-section-title">
@@ -106,13 +103,12 @@ export function QueryResultView({ response, onNewSearch }: QueryResultViewProps)
             </section>
           ) : null}
 
-          {/* 4. Feedback das Respostas (POST /api/v1/feedback) */}
           <AnswerFeedback
             queryId={response.pipeline_metadata?.query_id}
             query={response.query}
           />
 
-          {/* 5. Ver detalhes da recuperação (Recolhido por padrão) */}
+          {/* Detalhes técnicos ficam recolhidos para não poluir a leitura principal. */}
           <section className="recovery-details-section">
             <button
               type="button"
@@ -168,7 +164,6 @@ export function QueryResultView({ response, onNewSearch }: QueryResultViewProps)
                   ) : null}
                 </div>
 
-                {/* Chunks Selecionados em Detalhe */}
                 <div className="recovery-chunks-box">
                   <h4 className="recovery-subheading">Chunks e evidências recuperadas</h4>
                   <div className="recovery-chunks-list">

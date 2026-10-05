@@ -35,7 +35,6 @@ export function TransparenciaPage() {
       </header>
 
       <div className="transparency-sections-list">
-        {/* Seção 1: Fontes Utilizadas */}
         <section className="transparency-card">
           <div className="transparency-header">
             <div className="transparency-title-row">
@@ -75,7 +74,6 @@ export function TransparenciaPage() {
           ) : null}
         </section>
 
-        {/* Seção 2: Como buscamos documentos */}
         <section className="transparency-card">
           <div className="transparency-header">
             <div className="transparency-title-row">
@@ -135,7 +133,6 @@ export function TransparenciaPage() {
           ) : null}
         </section>
 
-        {/* Seção 3: Como as respostas são geradas */}
         <section className="transparency-card">
           <div className="transparency-header">
             <div className="transparency-title-row">
@@ -173,7 +170,6 @@ export function TransparenciaPage() {
           ) : null}
         </section>
 
-        {/* Seção 4: Segurança e limites */}
         <section className="transparency-card">
           <div className="transparency-header">
             <div className="transparency-title-row">
@@ -212,7 +208,6 @@ export function TransparenciaPage() {
           ) : null}
         </section>
 
-        {/* Seção 5: Qualidade das respostas */}
         <section className="transparency-card">
           <div className="transparency-header">
             <div className="transparency-title-row">

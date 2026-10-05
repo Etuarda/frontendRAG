@@ -3,7 +3,7 @@ import type { FeedbackPayload } from '../types';
 
 class FeedbackService {
   /**
-   * Envia a avaliação da resposta diretamente para POST /api/v1/feedback
+   * Envia a avaliação da resposta (POST /api/v1/feedback).
    */
   async sendFeedback(payload: FeedbackPayload): Promise<{ success: boolean; message: string }> {
     try {
@@ -20,7 +20,7 @@ class FeedbackService {
         message: data.message || 'Feedback registrado.',
       };
     } catch {
-      // Mesmo com o backend indisponível ou offline, garante confirmação para o usuário
+      // Feedback é opcional: falha de rede não deve virar erro para o usuário.
       return {
         success: true,
         message: 'Feedback registrado.',

@@ -55,7 +55,6 @@ export function Sidebar({
 
   const content = (
     <aside className="nexo-sidebar" aria-label="Navegação da aplicação">
-      {/* Topo da Sidebar: Logo minimalista do NEXO */}
       <div className="sidebar-brand-wrapper">
         <button
           type="button"
@@ -68,7 +67,7 @@ export function Sidebar({
             alt="NEXO RJ"
             className="sidebar-logo-img"
             onError={(e) => {
-              // Fallback se a imagem não carregar imediatamente
+              // Sem a logo, mostra o nome em texto para a marca nunca sumir.
               (e.currentTarget as HTMLElement).style.display = 'none';
               const textElem = document.getElementById('nexo-fallback-text');
               if (textElem) textElem.style.display = 'block';
@@ -80,7 +79,6 @@ export function Sidebar({
         </button>
       </div>
 
-      {/* Botão de Destaque: + Nova consulta */}
       <div className="sidebar-action-wrapper">
         <button
           type="button"
@@ -93,7 +91,6 @@ export function Sidebar({
         </button>
       </div>
 
-      {/* Navegação Principal */}
       <nav className="sidebar-nav-group" aria-label="Acesso principal">
         <div className="sidebar-nav-list">
           {MAIN_NAV.map((item) => (
@@ -114,7 +111,6 @@ export function Sidebar({
         </div>
       </nav>
 
-      {/* Seção EXPLORAR */}
       <div className="sidebar-section">
         <span className="sidebar-section-header">EXPLORAR</span>
         <div className="sidebar-nav-list">
@@ -133,7 +129,6 @@ export function Sidebar({
         </div>
       </div>
 
-      {/* Seção SOBRE */}
       <div className="sidebar-section">
         <span className="sidebar-section-header">SOBRE</span>
         <div className="sidebar-nav-list">
@@ -152,7 +147,6 @@ export function Sidebar({
         </div>
       </div>
 
-      {/* Rodapé discreto da Sidebar */}
       <div className="sidebar-footer">
         <div className="sidebar-status-tag">
           <span className="status-dot dot-success" />
@@ -164,10 +158,9 @@ export function Sidebar({
 
   return (
     <>
-      {/* Sidebar Desktop Fixa */}
+      {/* Mesmo conteúdo em dois formatos: fixo no desktop, drawer no mobile. */}
       <div className="desktop-sidebar-container">{content}</div>
 
-      {/* Drawer Móvel para Telas Pequenas */}
       {mobileOpen ? (
         <div
           className="mobile-sidebar-backdrop"

@@ -39,7 +39,6 @@ export function DocumentosPage({ onSearchQuery }: DocumentosPageProps) {
         </p>
       </header>
 
-      {/* Barra de Filtros */}
       <div className="catalog-filter-bar">
         <div className="catalog-search-field">
           <Icon name="search" size={15} />
@@ -69,7 +68,6 @@ export function DocumentosPage({ onSearchQuery }: DocumentosPageProps) {
         </div>
       </div>
 
-      {/* Grid de Documentos */}
       <div className="catalog-items-grid">
         {filtered.map((item) => (
           <article key={item.id} className="catalog-card">

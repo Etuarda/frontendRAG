@@ -86,6 +86,15 @@ VITE_API_BASE_URL=http://localhost:8000
 VITE_USE_MOCKS=true
 ```
 
+#### Deploy (GitHub Pages)
+
+```bash
+# Gera o build e copia para assets/ e docs/ (versionados no repositório)
+npm run build:pages
+```
+
+Faça commit dos arquivos gerados. Assim o Pages mostra a versão atual, seja servindo a raiz da `main`, a pasta `docs/` ou o workflow do GitHub Actions.
+
 ---
 
 ## Princípios de Clean Code Aplicados

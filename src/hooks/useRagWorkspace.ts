@@ -3,6 +3,7 @@ import type { RagQueryRequest, RagResponse } from '../types';
 import { ragService } from '../services/rag.service';
 import { historyService } from '../services/history.service';
 
+/** Estado da consulta atual (resposta, carregamento, filtros) compartilhado pelas telas. */
 export function useRagWorkspace() {
   const [currentResponse, setCurrentResponse] = useState<RagResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -28,7 +29,7 @@ export function useRagWorkspace() {
         const response = await ragService.query(payload);
         setCurrentResponse(response);
 
-        // Salva na persistência do histórico
+        // Salvar aqui garante que toda consulta concluída entre no histórico.
         historyService.saveQuery(response);
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Não foi possível concluir a consulta.';

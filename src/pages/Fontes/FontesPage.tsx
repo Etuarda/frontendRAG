@@ -13,7 +13,6 @@ export function FontesPage() {
         </p>
       </header>
 
-      {/* Painel Explicativo */}
       <section className="overview-notice-card">
         <div className="overview-notice-header">
           <Icon name="compass" size={18} />
@@ -27,7 +26,6 @@ export function FontesPage() {
         </p>
       </section>
 
-      {/* Grid de Fontes Oficiais */}
       <div className="catalog-items-grid">
         {OFFICIAL_SOURCES.map((source) => (
           <article key={source.id} className="catalog-card">

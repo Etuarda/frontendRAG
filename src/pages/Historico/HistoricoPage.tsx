@@ -21,7 +21,7 @@ export function HistoricoPage({ onSelectHistoryItem, onNewQuery }: HistoricoPage
     if (item.full_response) {
       onSelectHistoryItem(item.full_response);
     } else {
-      // Reconstitui o objeto de resposta a partir do item do histórico
+      // Itens antigos podem não ter a resposta completa; monta uma versão mínima para reabrir.
       const reconstructed: RagResponse = {
         query: item.query,
         answer: item.answer_summary,
@@ -46,7 +46,6 @@ export function HistoricoPage({ onSelectHistoryItem, onNewQuery }: HistoricoPage
         </p>
       </header>
 
-      {/* Barra de Filtro e Ações */}
       <div className="history-toolbar">
         <div className="history-search-input">
           <Icon name="search" size={15} />
@@ -86,7 +85,6 @@ export function HistoricoPage({ onSelectHistoryItem, onNewQuery }: HistoricoPage
         </div>
       ) : null}
 
-      {/* Lista ou Estado Vazio */}
       {!loading && filteredItems.length === 0 ? (
         <div className="empty-history-box">
           <div className="empty-history-icon">

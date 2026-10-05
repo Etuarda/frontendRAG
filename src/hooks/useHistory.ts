@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { HistoryItem } from '../types';
 import { historyService } from '../services/history.service';
 
+/** Expõe o histórico de consultas com estados de carregamento e erro para a UI. */
 export function useHistory() {
   const [items, setItems] = useState<HistoryItem[]>([]);
   const [loading, setLoading] = useState(true);

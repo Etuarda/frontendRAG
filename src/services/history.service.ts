@@ -5,9 +5,8 @@ const LOCAL_STORAGE_KEY = 'nexo_session_history_v2';
 
 class HistoryService {
   /**
-   * Obtém as consultas persistidas fornecidas pelo backend via GET /api/v1/history.
-   * Não utiliza dados mockados quando a API estiver disponível.
-   * Caso o backend esteja offline, utiliza o armazenamento local da sessão como fallback seguro.
+   * Busca o histórico no backend (GET /api/v1/history).
+   * Offline, usa o armazenamento local para o usuário não perder suas consultas.
    */
   async getHistory(): Promise<HistoryItem[]> {
     try {
@@ -18,14 +17,14 @@ class HistoryService {
         return data;
       }
     } catch {
-      // Fallback gracioso para a sessão local se o backend não estiver respondendo
+      // Backend indisponível: segue para o histórico local.
     }
 
     return this.getLocalHistory();
   }
 
   /**
-   * Registra uma consulta no histórico local (e sincroniza se houver endpoint).
+   * Salva a consulta localmente, sem duplicar perguntas e limitada a 50 itens para não estourar o storage.
    */
   saveQuery(response: RagResponse): HistoryItem {
     const summary = response.answer
@@ -54,7 +53,7 @@ class HistoryService {
     try {
       await apiClient('/api/v1/history', { method: 'DELETE' });
     } catch {
-      // Ignora falha remota no clear
+      // A limpeza local deve acontecer mesmo se o backend falhar.
     }
     if (typeof window !== 'undefined') {
       window.sessionStorage.removeItem(LOCAL_STORAGE_KEY);
@@ -82,7 +81,7 @@ class HistoryService {
       window.sessionStorage.setItem(LOCAL_STORAGE_KEY, str);
       window.localStorage.setItem(LOCAL_STORAGE_KEY, str);
     } catch {
-      // Armazenamento pode falhar em modo restrito
+      // Storage pode estar bloqueado (modo privado ou cota cheia); histórico é opcional.
     }
   }
 }
