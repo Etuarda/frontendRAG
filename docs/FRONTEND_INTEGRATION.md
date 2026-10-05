@@ -59,7 +59,7 @@ Componentes nunca chamam `fetch`. Os hooks principais são:
 
 ### `api.ts`
 
-- **Timeouts:** 20 s para catálogo e 120 s para `/api/v1/query`, já que consultas RAG demoram mais.
+- **Timeouts:** 20 s para catálogo e 240 s para `/api/v1/query`: o backend espera até 180 s pelo LLM, mais a busca.
 - **Status preservado:** todo erro vira `ApiError` com `kind` (`config`, `network`, `timeout`, `http`)
   e `status`.
 - **Mensagem de erro:** usa o `detail` do FastAPI quando existe, seja texto ou lista de validação.
