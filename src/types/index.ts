@@ -60,6 +60,28 @@ export interface RagQueryRequest {
   top_k?: number;
   fonte_filter?: string;
   search_strategy?: 'automatica' | 'hibrida' | 'normativa';
+  /** Identifica a conversa para o backend agrupar as perguntas. */
+  conversation_id?: string;
+  /** Turnos anteriores, para o backend entender perguntas de acompanhamento ("e em 2024?"). */
+  history?: { query: string; answer: string }[];
+}
+
+/** Uma pergunta e sua resposta dentro de uma conversa. */
+export interface ConversationTurn {
+  id: string;
+  query: string;
+  response: RagResponse;
+  created_at: string;
+  /** Avaliação do usuário; guardada para não pedir de novo ao reabrir a conversa. */
+  feedback?: boolean;
+}
+
+export interface Conversation {
+  id: string;
+  title: string;
+  created_at: string;
+  updated_at: string;
+  turns: ConversationTurn[];
 }
 
 export interface FeedbackPayload {

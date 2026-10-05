@@ -1,19 +1,17 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { HistoryItem } from '../types';
+import type { Conversation } from '../types';
 import { historyService } from '../services/history.service';
 
-/** Expõe o histórico de consultas com estados de carregamento e erro para a UI. */
+/** Expõe as conversas salvas com estados de carregamento e erro para a UI. */
 export function useHistory() {
-  const [items, setItems] = useState<HistoryItem[]>([]);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchHistory = useCallback(async () => {
-    setLoading(true);
     setError(null);
     try {
-      const data = await historyService.getHistory();
-      setItems(data);
+      setConversations(await historyService.getConversations());
     } catch {
       setError('Não foi possível carregar o histórico no momento.');
     } finally {
@@ -21,20 +19,19 @@ export function useHistory() {
     }
   }, []);
 
+  // Recarrega sempre que outra parte do app salva, apaga ou limpa conversas.
   useEffect(() => {
     fetchHistory();
+    return historyService.subscribe(fetchHistory);
   }, [fetchHistory]);
+
+  const deleteConversation = useCallback((id: string) => {
+    historyService.deleteConversation(id);
+  }, []);
 
   const clearHistory = useCallback(async () => {
     await historyService.clearHistory();
-    setItems([]);
   }, []);
 
-  return {
-    items,
-    loading,
-    error,
-    refresh: fetchHistory,
-    clearHistory,
-  };
+  return { conversations, loading, error, deleteConversation, clearHistory };
 }

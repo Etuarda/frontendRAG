@@ -5,10 +5,13 @@ import { feedbackService } from '../../services/feedback.service';
 interface AnswerFeedbackProps {
   queryId?: string;
   query: string;
+  /** Avaliação já registrada (ex.: conversa reaberta do histórico). */
+  value?: boolean;
+  onRated?: (useful: boolean) => void;
 }
 
-export function AnswerFeedback({ queryId, query }: AnswerFeedbackProps) {
-  const [feedbackSent, setFeedbackSent] = useState<boolean | null>(null);
+export function AnswerFeedback({ queryId, query, value, onRated }: AnswerFeedbackProps) {
+  const [feedbackSent, setFeedbackSent] = useState<boolean | null>(value ?? null);
   const [sending, setSending] = useState(false);
 
   const handleFeedback = async (useful: boolean) => {
@@ -22,11 +25,11 @@ export function AnswerFeedback({ queryId, query }: AnswerFeedbackProps) {
         useful,
         created_at: new Date().toISOString(),
       });
-      setFeedbackSent(useful);
     } catch {
       // Feedback não é crítico: confirma ao usuário mesmo se o envio falhar.
-      setFeedbackSent(useful);
     } finally {
+      setFeedbackSent(useful);
+      onRated?.(useful);
       setSending(false);
     }
   };

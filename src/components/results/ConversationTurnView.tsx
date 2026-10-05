@@ -1,15 +1,17 @@
 import { useState } from 'react';
-import type { RagResponse, SourceRef } from '../../types';
+import type { ConversationTurn, SourceRef } from '../../types';
 import { Icon } from '../ui/Icon';
 import { AnswerFeedback } from '../feedback/AnswerFeedback';
 import { EVIDENCE_LEVEL_LABELS, REFUSAL_LABELS } from '../../utils/catalog';
 
-interface QueryResultViewProps {
-  response: RagResponse;
-  onNewSearch: () => void;
+interface ConversationTurnViewProps {
+  turn: ConversationTurn;
+  onRate: (turnId: string, useful: boolean) => void;
 }
 
-export function QueryResultView({ response, onNewSearch }: QueryResultViewProps) {
+/** Uma pergunta da conversa com sua resposta, fontes e avaliação. */
+export function ConversationTurnView({ turn, onRate }: ConversationTurnViewProps) {
+  const { response } = turn;
   const [detailsOpen, setDetailsOpen] = useState(false);
 
   // A API separa parágrafos por linha em branco; um <p> por bloco facilita a leitura.
@@ -18,22 +20,10 @@ export function QueryResultView({ response, onNewSearch }: QueryResultViewProps)
     : [];
 
   return (
-    <div className="query-result-container">
-      <section className="result-header-section">
-        <div className="result-header-top">
-          <span className="result-badge-label">CONSULTA REALIZADA</span>
-          <button
-            type="button"
-            className="btn-new-search-link"
-            onClick={onNewSearch}
-            aria-label="Fazer outra pesquisa"
-          >
-            <Icon name="refresh-cw" size={13} />
-            <span>Outra consulta</span>
-          </button>
-        </div>
-        <h1 className="result-query-title">“{response.query}”</h1>
-      </section>
+    <article className="conversation-turn" aria-label={`Pergunta: ${turn.query}`}>
+      <div className="turn-question">
+        <p>{turn.query}</p>
+      </div>
 
       {/* Sem evidência suficiente, explicamos a recusa em vez de arriscar uma resposta. */}
       {response.is_refusal ? (
@@ -62,8 +52,8 @@ export function QueryResultView({ response, onNewSearch }: QueryResultViewProps)
         </div>
       ) : (
         <>
-          <section className="result-answer-section" aria-labelledby="answer-heading">
-            <h2 id="answer-heading" className="visually-hidden">
+          <section className="result-answer-section" aria-labelledby={`answer-${turn.id}`}>
+            <h2 id={`answer-${turn.id}`} className="visually-hidden">
               Resposta fundamentada
             </h2>
             <div className="result-answer-prose">
@@ -74,8 +64,8 @@ export function QueryResultView({ response, onNewSearch }: QueryResultViewProps)
           </section>
 
           {response.sources_used.length > 0 ? (
-            <section className="result-sources-section" aria-labelledby="sources-heading">
-              <h2 id="sources-heading" className="sources-section-title">
+            <section className="result-sources-section" aria-labelledby={`sources-${turn.id}`}>
+              <h2 id={`sources-${turn.id}`} className="sources-section-title">
                 Fontes utilizadas ({response.sources_used.length})
               </h2>
 
@@ -105,7 +95,9 @@ export function QueryResultView({ response, onNewSearch }: QueryResultViewProps)
 
           <AnswerFeedback
             queryId={response.pipeline_metadata?.query_id}
-            query={response.query}
+            query={turn.query}
+            value={turn.feedback}
+            onRated={(useful) => onRate(turn.id, useful)}
           />
 
           {/* Detalhes técnicos ficam recolhidos para não poluir a leitura principal. */}
@@ -180,6 +172,6 @@ export function QueryResultView({ response, onNewSearch }: QueryResultViewProps)
           </section>
         </>
       )}
-    </div>
+    </article>
   );
 }

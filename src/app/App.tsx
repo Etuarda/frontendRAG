@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { AppView, RagResponse } from '../types';
+import type { AppView, Conversation } from '../types';
 import { useRagWorkspace } from '../hooks/useRagWorkspace';
 import { useHistory } from '../hooks/useHistory';
 import { useSidebar } from '../hooks/useSidebar';
@@ -23,19 +23,21 @@ export function App() {
   const sidebar = useSidebar();
 
   const workspace = useRagWorkspace();
-  const { items: historyItems, refresh: refreshHistory } = useHistory();
+  const { conversations } = useHistory();
 
   const handleNewQuery = () => {
-    workspace.resetResponse();
+    workspace.startNewConversation();
     setActiveView('consulta');
   };
 
-  const handleSelectHistoryItem = (response: RagResponse) => {
-    workspace.selectHistoryResponse(response);
+  const handleOpenConversation = (conversation: Conversation) => {
+    workspace.openConversation(conversation);
     setActiveView('consulta');
   };
 
+  // Busca vinda dos catálogos é um assunto novo, então abre uma conversa própria.
   const handleDirectSearch = (queryText: string) => {
+    workspace.startNewConversation();
     workspace.submitQuery(queryText);
     setActiveView('consulta');
   };
@@ -45,18 +47,17 @@ export function App() {
       case 'consulta':
         return (
           <ConsultaPage
-            currentResponse={workspace.currentResponse}
+            conversation={workspace.conversation}
+            pendingQuery={workspace.pendingQuery}
             loading={workspace.loading}
             error={workspace.error}
             fonteFilter={workspace.fonteFilter}
             onFonteChange={workspace.setFonteFilter}
             searchStrategy={workspace.searchStrategy}
             onStrategyChange={workspace.setSearchStrategy}
-            onSubmitQuery={async (q) => {
-              await workspace.submitQuery(q);
-              refreshHistory();
-            }}
-            onResetResponse={workspace.resetResponse}
+            onSubmitQuery={workspace.submitQuery}
+            onRateTurn={workspace.rateTurn}
+            onNewConversation={handleNewQuery}
             onNavigate={setActiveView}
           />
         );
@@ -64,7 +65,7 @@ export function App() {
       case 'historico':
         return (
           <HistoricoPage
-            onSelectHistoryItem={handleSelectHistoryItem}
+            onOpenConversation={handleOpenConversation}
             onNewQuery={handleNewQuery}
           />
         );
@@ -123,8 +124,8 @@ export function App() {
           type="button"
           className="mobile-new-btn"
           onClick={handleNewQuery}
-          aria-label="Nova consulta"
-          title="Nova consulta"
+          aria-label="Nova conversa"
+          title="Nova conversa"
         >
           <Icon name="plus" size={18} />
         </button>
@@ -134,7 +135,7 @@ export function App() {
         activeView={activeView}
         onSelectView={setActiveView}
         onNewQuery={handleNewQuery}
-        historyCount={historyItems.length}
+        historyCount={conversations.length}
         mobileOpen={sidebar.mobileOpen}
         onCloseMobile={sidebar.closeMobile}
         collapsed={sidebar.collapsed}

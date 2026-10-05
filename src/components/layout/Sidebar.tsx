@@ -149,11 +149,11 @@ export function Sidebar({
           type="button"
           className="btn-new-query"
           onClick={handleNewClick}
-          aria-label="Iniciar nova consulta"
-          title={collapsed ? 'Nova consulta' : undefined}
+          aria-label="Iniciar nova conversa"
+          title={collapsed ? 'Nova conversa' : undefined}
         >
           <Icon name="plus" size={16} />
-          <span className="sidebar-label">Nova consulta</span>
+          <span className="sidebar-label">Nova conversa</span>
         </button>
 
         <nav className="sidebar-nav" aria-label="Seções">
