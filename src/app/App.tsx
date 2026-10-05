@@ -1,102 +1,143 @@
 import { useState } from 'react';
-import type { AppView, SessionEntry } from '../domain/rag/types';
-import { HistoryView } from '../features/history/components/HistoryView';
-import { ProcessingStatus } from '../features/query/components/ProcessingStatus';
-import { QueryComposer } from '../features/query/components/QueryComposer';
-import { SuggestedQueries } from '../features/query/components/SuggestedQueries';
-import { useRagWorkspace } from '../features/query/hooks/useRagWorkspace';
-import { AnswerPanel } from '../features/results/components/AnswerPanel';
-import { SourcesView } from '../features/sources/components/SourcesView';
-import { Header } from '../shared/components/Header';
-import { Icon } from '../shared/components/Icon';
+import type { AppView, RagResponse } from '../types';
+import { useRagWorkspace } from '../hooks/useRagWorkspace';
+import { useHistory } from '../hooks/useHistory';
+import { Sidebar } from '../components/layout/Sidebar';
+import { Footer } from '../components/layout/Footer';
+import { Icon } from '../components/ui/Icon';
+
+import { ConsultaPage } from '../pages/Consulta/ConsultaPage';
+import { HistoricoPage } from '../pages/Historico/HistoricoPage';
+import { ContratacoesPage } from '../pages/Contratacoes/ContratacoesPage';
+import { DocumentosPage } from '../pages/Documentos/DocumentosPage';
+import { OrgaosPage } from '../pages/Orgaos/OrgaosPage';
+import { FontesPage } from '../pages/Fontes/FontesPage';
+import { TransparenciaPage } from '../pages/Transparencia/TransparenciaPage';
+import { SobrePage } from '../pages/Sobre/SobrePage';
+import { ComoFuncionaPage } from '../pages/Sobre/ComoFuncionaPage';
 
 export function App() {
   const [activeView, setActiveView] = useState<AppView>('consulta');
-  const workspace = useRagWorkspace();
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
-  const handleSelectHistoryEntry = (entry: SessionEntry) => {
-    workspace.selectHistoryEntry(entry);
+  const workspace = useRagWorkspace();
+  const { items: historyItems, refresh: refreshHistory } = useHistory();
+
+  const handleNewQuery = () => {
+    workspace.resetResponse();
     setActiveView('consulta');
   };
 
-  const handleRepeatQuery = (query: string) => {
-    workspace.submitQuery(query);
+  const handleSelectHistoryItem = (response: RagResponse) => {
+    workspace.selectHistoryResponse(response);
     setActiveView('consulta');
+  };
+
+  const handleDirectSearch = (queryText: string) => {
+    workspace.submitQuery(queryText);
+    setActiveView('consulta');
+  };
+
+  const renderActivePage = () => {
+    switch (activeView) {
+      case 'consulta':
+        return (
+          <ConsultaPage
+            currentResponse={workspace.currentResponse}
+            loading={workspace.loading}
+            error={workspace.error}
+            fonteFilter={workspace.fonteFilter}
+            onFonteChange={workspace.setFonteFilter}
+            searchStrategy={workspace.searchStrategy}
+            onStrategyChange={workspace.setSearchStrategy}
+            onSubmitQuery={async (q) => {
+              await workspace.submitQuery(q);
+              refreshHistory();
+            }}
+            onResetResponse={workspace.resetResponse}
+            onNavigate={setActiveView}
+          />
+        );
+
+      case 'historico':
+        return (
+          <HistoricoPage
+            onSelectHistoryItem={handleSelectHistoryItem}
+            onNewQuery={handleNewQuery}
+          />
+        );
+
+      case 'contratacoes':
+        return <ContratacoesPage onSearchQuery={handleDirectSearch} />;
+
+      case 'documentos':
+        return <DocumentosPage onSearchQuery={handleDirectSearch} />;
+
+      case 'orgaos':
+        return <OrgaosPage onSearchQuery={handleDirectSearch} />;
+
+      case 'fontes':
+        return <FontesPage />;
+
+      case 'como-funciona':
+        return <ComoFuncionaPage onNavigate={setActiveView} />;
+
+      case 'transparencia':
+        return <TransparenciaPage />;
+
+      case 'sobre':
+        return <SobrePage />;
+
+      default:
+        return null;
+    }
   };
 
   return (
-    <div className="app-shell">
-      <Header
+    <div className="nexo-app-layout">
+      {/* Barra de Topo Mobile (Visível apenas em telas menores) */}
+      <header className="nexo-mobile-topbar" aria-label="Cabeçalho mobile">
+        <button
+          type="button"
+          className="mobile-hamburger-btn"
+          onClick={() => setMobileSidebarOpen(true)}
+          aria-label="Abrir menu lateral"
+        >
+          <Icon name="menu" size={20} />
+        </button>
+
+        <div className="mobile-brand-center" onClick={() => handleNewQuery()}>
+          <img src="./assets/nexo.png" alt="NEXO RJ" className="mobile-topbar-logo" />
+        </div>
+
+        <button
+          type="button"
+          className="mobile-new-btn"
+          onClick={handleNewQuery}
+          aria-label="Nova consulta"
+          title="Nova consulta"
+        >
+          <Icon name="plus" size={18} />
+        </button>
+      </header>
+
+      {/* Sidebar de Navegação */}
+      <Sidebar
         activeView={activeView}
         onSelectView={setActiveView}
-        historyCount={workspace.history.length}
+        onNewQuery={handleNewQuery}
+        historyCount={historyItems.length}
+        mobileOpen={mobileSidebarOpen}
+        onCloseMobile={() => setMobileSidebarOpen(false)}
       />
 
-      <div className="workspace-shell">
-        <main className={`main-content ${activeView !== 'consulta' ? 'is-full-view' : ''}`}>
-          <div className="content-column">
-            {activeView === 'consulta' && (
-              <>
-                {!workspace.currentResponse && !workspace.loading ? (
-                  <section className="hero-copy">
-                    <span className="section-eyebrow">
-                      ESTADO DO RIO DE JANEIRO · AUDITORIA E TRANSPARÊNCIA
-                    </span>
-                    <h1>
-                      Consulte contratações públicas <em>com evidências verificáveis</em>
-                    </h1>
-                    <p>
-                      Faça perguntas em linguagem natural sobre contratações públicas do Rio de
-                      Janeiro e consulte respostas fundamentadas nas fontes disponíveis.
-                    </p>
-                  </section>
-                ) : null}
-
-                <QueryComposer
-                  loading={workspace.loading}
-                  onSubmit={workspace.submitQuery}
-                />
-
-                {workspace.error ? (
-                  <div className="error-banner" role="alert">
-                    <Icon name="info" size={18} />
-                    <div>
-                      <strong>Não foi possível concluir a consulta</strong>
-                      <span>{workspace.error}</span>
-                    </div>
-                  </div>
-                ) : null}
-
-                {workspace.loading ? <ProcessingStatus /> : null}
-
-                {!workspace.loading && workspace.currentResponse ? (
-                  <AnswerPanel
-                    response={workspace.currentResponse}
-                    onReset={workspace.resetResponse}
-                  />
-                ) : null}
-
-                {!workspace.loading && !workspace.currentResponse ? (
-                  <SuggestedQueries
-                    disabled={workspace.loading}
-                    onSelect={workspace.submitQuery}
-                  />
-                ) : null}
-              </>
-            )}
-
-            {activeView === 'historico' && (
-              <HistoryView
-                entries={workspace.history}
-                onSelectQuery={handleSelectHistoryEntry}
-                onRepeatQuery={handleRepeatQuery}
-                onClearHistory={workspace.clearHistory}
-              />
-            )}
-
-            {activeView === 'fontes' && <SourcesView />}
-          </div>
+      {/* Conteúdo Principal da Aplicação */}
+      <div className="nexo-main-wrapper">
+        <main className="nexo-main-canvas" role="main">
+          <div className="nexo-container">{renderActivePage()}</div>
         </main>
+
+        <Footer />
       </div>
     </div>
   );
