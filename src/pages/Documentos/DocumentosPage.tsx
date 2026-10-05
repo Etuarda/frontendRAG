@@ -21,16 +21,21 @@ export function DocumentosPage({ onSearchQuery }: DocumentosPageProps) {
 
   const handleConsultar = (doc: DocumentoRecord) => {
     const doOrgao = doc.orgao ? ` de ${doc.orgao}` : '';
-    onSearchQuery(`O que diz o documento "${doc.titulo}"${doOrgao}?`);
+    const assunto = doc.base_id === 'emails_sinteticos' ? 'a conversa sintética'
+      : doc.natureza === 'normativa' ? 'a norma no documento'
+      : doc.natureza === 'agregada' ? 'o registro de planejamento PCA'
+      : doc.natureza === 'estruturada' ? 'o contrato' : 'a ata de registro';
+    onSearchQuery(`O que diz ${assunto} "${doc.titulo}"${doOrgao}?`);
   };
 
   return (
     <div className="page-content-wrapper">
       <header className="page-header">
-        <span className="page-eyebrow">DOCUMENTOS OFICIAIS</span>
+        <span className="page-eyebrow">ACERVO CONSULTÁVEL</span>
         <h1 className="page-title">Acervo de documentos</h1>
         <p className="page-description">
-          Documentos do inventário oficial mais recente usado nas respostas.
+          Documentos do acervo e conversas sintéticas identificadas separadamente.
+          Os cenários fictícios não comprovam fatos reais.
         </p>
       </header>
 

@@ -82,7 +82,9 @@ Componentes nunca chamam `fetch`. Os hooks principais são:
 
 As buscas de texto esperam 400 ms sem digitação antes de chamar a API.
 O filtro `tipo` de Documentos oferece só os rótulos do contrato:
-`Normativo`, `Contrato`, `Ata de Registro` e `PCA`.
+`Normativo`, `Contrato`, `Ata de Registro`, `PCA` e `Conversa sintética`.
+O backend atual oferece todas essas rotas; o suplemento é identificado como
+sintético e as cinco conversas restritas não aparecem no catálogo.
 
 Campos `null` aparecem como "Não informado". Nada é inferido: status, modalidade, sigla,
 categoria e URL só são exibidos quando a API os envia.
@@ -126,6 +128,13 @@ Erro nunca é trocado por mock, catálogo local ou sucesso falso.
 ### Conversa contínua
 
 Depois da primeira resposta, um campo fixo no rodapé permite fazer novas perguntas na mesma tela.
+Saudações, agradecimentos e mensagens comuns podem receber resposta de conversa,
+sem busca nem fontes. Mensagens longas são interpretadas pela intenção: um relato
+ou pedido de ajuda não é automaticamente uma consulta ao acervo. A interface
+identifica respostas sem busca como “Conversa — sem consulta ao acervo”, sem
+mostrar recusa nem atribuir evidência factual. Consultas sobre fatos continuam
+exigindo fontes, e os guardrails de dados bancários/credenciais permanecem.
+
 Cada pergunta é uma consulta independente para o backend. O contrato aceita só `query` e `top_k`,
 então o contexto das perguntas anteriores **não** é enviado. A conversa existe apenas na sessão
 aberta; "Nova conversa" limpa a tela.
@@ -177,7 +186,7 @@ sem mudar código.
 
 ## 9. Testes automatizados
 
-`npm test` roda 30 testes com Vitest e Testing Library. Nos testes, o `fetch` é substituído
+`npm test` roda 36 testes com Vitest e Testing Library. Nos testes, o `fetch` é substituído
 por `src/test/http.ts`: nenhuma requisição sai da máquina e nada disso entra no build.
 
 | Arquivo | O que garante |

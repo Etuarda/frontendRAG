@@ -12,6 +12,8 @@ interface ConversationTurnViewProps {
 /** Uma pergunta da conversa com a resposta, as fontes e a avaliação. */
 export function ConversationTurnView({ turn, onRated }: ConversationTurnViewProps) {
   const { response } = turn;
+  const isConversation = !response.is_refusal && response.bases_consultadas.length === 0
+    && response.sources_used.length === 0;
 
   // A API separa parágrafos por linha em branco; um <p> por bloco facilita a leitura.
   const paragraphs = response.answer
@@ -34,6 +36,12 @@ export function ConversationTurnView({ turn, onRated }: ConversationTurnViewProp
           {response.refusal_reason ? (
             <p className="refusal-explanation">{refusalLabel(response.refusal_reason)}</p>
           ) : null}
+          {response.refusal_reason === 'sem_evidencia' ? (
+            <p className="refusal-explanation">
+              Faça uma pergunta sobre o acervo, por exemplo:
+              {' '}“O que o e-mail sintético da DPRJ diz sobre papel A4?”
+            </p>
+          ) : null}
           {paragraphs.length > 0 ? (
             <div className="refusal-paragraphs">
               {paragraphs.map((p, i) => (
@@ -45,7 +53,7 @@ export function ConversationTurnView({ turn, onRated }: ConversationTurnViewProp
       ) : (
         <section className="result-answer-section" aria-labelledby={`answer-${response.query_id}`}>
           <h2 id={`answer-${response.query_id}`} className="visually-hidden">
-            Resposta fundamentada
+            {isConversation ? 'Conversa' : 'Resposta fundamentada'}
           </h2>
           <div className="result-answer-prose">
             {paragraphs.map((para, index) => (
@@ -56,7 +64,7 @@ export function ConversationTurnView({ turn, onRated }: ConversationTurnViewProp
       )}
 
       <div className="turn-meta-row">
-        <span className="turn-meta-tag">{EVIDENCE_LEVEL_LABELS[response.confidence_level]}</span>
+        <span className="turn-meta-tag">{isConversation ? 'Conversa — sem consulta ao acervo' : EVIDENCE_LEVEL_LABELS[response.confidence_level]}</span>
         {response.bases_consultadas.map((natureza) => (
           <span key={natureza} className="turn-meta-tag">
             Base {NATUREZA_LABELS[natureza].toLowerCase()}
@@ -83,6 +91,9 @@ export function ConversationTurnView({ turn, onRated }: ConversationTurnViewProp
                 </div>
                 <div className="source-card-meta">
                   <span className="source-meta-tag">Base: {source.base_id}</span>
+                  {source.base_id === 'emails_sinteticos' ? (
+                    <span className="source-meta-tag">Cenário sintético — não é um fato real</span>
+                  ) : null}
                 </div>
               </article>
             ))}
