@@ -1,4 +1,6 @@
 import { Icon } from '../../components/ui/Icon';
+import nexoLogo from '../../assets/nexo.png';
+import ecoaLogo from '../../assets/ecoaPucRio.png';
 
 export function SobrePage() {
   return (
@@ -15,7 +17,7 @@ export function SobrePage() {
       <div className="about-main-card">
         <div className="about-emblem-row">
           <img
-            src="./assets/nexo.png"
+            src={nexoLogo}
             alt="Logo NEXO RJ"
             className="about-nexo-logo"
             onError={(e) => {
@@ -24,7 +26,7 @@ export function SobrePage() {
           />
           <div className="about-divider-v" />
           <img
-            src="./assets/ecoaPucRio.png"
+            src={ecoaLogo}
             alt="Instituto ECOA PUC-Rio"
             className="about-ecoa-logo"
             onError={(e) => {

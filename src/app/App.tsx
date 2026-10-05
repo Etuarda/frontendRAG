@@ -6,6 +6,7 @@ import { useSidebar } from '../hooks/useSidebar';
 import { Sidebar, SIDEBAR_ID } from '../components/layout/Sidebar';
 import { Footer } from '../components/layout/Footer';
 import { Icon } from '../components/ui/Icon';
+import nexoLogo from '../assets/nexo.png';
 
 import { ConsultaPage } from '../pages/Consulta/ConsultaPage';
 import { HistoricoPage } from '../pages/Historico/HistoricoPage';
@@ -115,7 +116,7 @@ export function App() {
           onClick={handleNewQuery}
           aria-label="NEXO RJ - Página inicial"
         >
-          <img src="./assets/nexo.png" alt="" className="mobile-topbar-logo" />
+          <img src={nexoLogo} alt="" className="mobile-topbar-logo" />
         </button>
 
         <button

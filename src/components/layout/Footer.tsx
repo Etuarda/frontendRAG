@@ -1,3 +1,5 @@
+import ecoaLogo from '../../assets/ecoaPucRio.png';
+
 export function Footer() {
   return (
     <footer className="nexo-footer" aria-label="Informações institucionais do projeto">
@@ -13,7 +15,7 @@ export function Footer() {
 
         <div className="nexo-footer-emblem-wrap">
           <img
-            src="./assets/ecoaPucRio.png"
+            src={ecoaLogo}
             alt="Instituto ECOA PUC-Rio"
             className="footer-emblem-img"
             onError={(e) => {

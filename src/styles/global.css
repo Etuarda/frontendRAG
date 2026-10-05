@@ -1768,8 +1768,9 @@ a {
   background-color: var(--border-subtle);
 }
 
+/* Logo quase quadrada: precisa de mais altura que a NEXO para ficar legível. */
 .about-ecoa-logo {
-  max-height: 32px;
+  height: 48px;
   width: auto;
   object-fit: contain;
 }
@@ -1939,7 +1940,7 @@ a {
 }
 
 .footer-emblem-img {
-  max-height: 26px;
+  height: 36px;
   width: auto;
   object-fit: contain;
 }

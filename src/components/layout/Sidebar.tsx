@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import type { AppView } from '../../types';
 import { Icon, type IconName } from '../ui/Icon';
+import nexoLogo from '../../assets/nexo.png';
+import nexoMark from '../../assets/nexo-mark.png';
 
 export const SIDEBAR_ID = 'nexo-sidebar';
 
@@ -110,12 +112,12 @@ export function Sidebar({
             ) : (
               <>
                 <img
-                  src="./assets/nexo.png"
+                  src={nexoLogo}
                   alt=""
                   className="sidebar-logo-full"
                   onError={() => setLogoFailed(true)}
                 />
-                <img src="./assets/nexo-mark.png" alt="" className="sidebar-logo-mark" />
+                <img src={nexoMark} alt="" className="sidebar-logo-mark" />
               </>
             )}
           </button>

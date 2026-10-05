@@ -11,6 +11,8 @@ const stripPagesLoader = (): Plugin => ({
   },
 });
 
+// Os arquivos do build mantêm o hash padrão do Vite no nome: cada versão ganha
+// nomes novos, então o cache do navegador nunca serve CSS/JS/imagem antigos.
 export default defineConfig({
   // Caminhos relativos permitem servir o app em subpasta (ex.: /frontendRAG/).
   base: './',
@@ -19,15 +21,5 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 5173,
     strictPort: true,
-  },
-  build: {
-    rollupOptions: {
-      output: {
-        // Nomes fixos para o index.html da raiz sempre apontar para o build mais recente.
-        entryFileNames: 'assets/app.js',
-        chunkFileNames: 'assets/[name].js',
-        assetFileNames: 'assets/[name][extname]',
-      },
-    },
   },
 });
