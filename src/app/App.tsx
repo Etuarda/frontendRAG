@@ -2,7 +2,8 @@ import { useState } from 'react';
 import type { AppView, RagResponse } from '../types';
 import { useRagWorkspace } from '../hooks/useRagWorkspace';
 import { useHistory } from '../hooks/useHistory';
-import { Sidebar } from '../components/layout/Sidebar';
+import { useSidebar } from '../hooks/useSidebar';
+import { Sidebar, SIDEBAR_ID } from '../components/layout/Sidebar';
 import { Footer } from '../components/layout/Footer';
 import { Icon } from '../components/ui/Icon';
 
@@ -18,7 +19,7 @@ import { ComoFuncionaPage } from '../pages/Sobre/ComoFuncionaPage';
 
 export function App() {
   const [activeView, setActiveView] = useState<AppView>('consulta');
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const sidebar = useSidebar();
 
   const workspace = useRagWorkspace();
   const { items: historyItems, refresh: refreshHistory } = useHistory();
@@ -100,15 +101,22 @@ export function App() {
         <button
           type="button"
           className="mobile-hamburger-btn"
-          onClick={() => setMobileSidebarOpen(true)}
-          aria-label="Abrir menu lateral"
+          onClick={sidebar.openMobile}
+          aria-label="Abrir menu"
+          aria-expanded={sidebar.mobileOpen}
+          aria-controls={SIDEBAR_ID}
         >
           <Icon name="menu" size={20} />
         </button>
 
-        <div className="mobile-brand-center" onClick={() => handleNewQuery()}>
-          <img src="./assets/nexo.png" alt="NEXO RJ" className="mobile-topbar-logo" />
-        </div>
+        <button
+          type="button"
+          className="mobile-brand-center"
+          onClick={handleNewQuery}
+          aria-label="NEXO RJ - Página inicial"
+        >
+          <img src="./assets/nexo.png" alt="" className="mobile-topbar-logo" />
+        </button>
 
         <button
           type="button"
@@ -126,8 +134,10 @@ export function App() {
         onSelectView={setActiveView}
         onNewQuery={handleNewQuery}
         historyCount={historyItems.length}
-        mobileOpen={mobileSidebarOpen}
-        onCloseMobile={() => setMobileSidebarOpen(false)}
+        mobileOpen={sidebar.mobileOpen}
+        onCloseMobile={sidebar.closeMobile}
+        collapsed={sidebar.collapsed}
+        onToggleCollapsed={sidebar.toggleCollapsed}
       />
 
       <div className="nexo-main-wrapper">
