@@ -4,6 +4,8 @@ Interface React do NEXO RJ, consulta inteligente sobre contratações públicas 
 
 O frontend consome **exclusivamente** o backend FastAPI do Grande Desafio, seguindo o contrato oficial `FRONTEND_API_CONTRACT.md` (mantido no repositório do backend). Não há mocks, dados de exemplo nem histórico guardado no navegador: com o backend desligado, a interface mostra erro de conexão.
 
+Passo a passo para rodar backend + frontend na sua máquina: [docs/GUIA_EXECUCAO_LOCAL.md](docs/GUIA_EXECUCAO_LOCAL.md).
+
 Detalhes da integração (services, endpoints por página, estados de tela, deploy): [docs/FRONTEND_INTEGRATION.md](docs/FRONTEND_INTEGRATION.md).
 
 ## Stack
@@ -12,14 +14,14 @@ React 19 · TypeScript · Vite 6 · CSS próprio, mobile-first.
 
 ## Como executar
 
-Pré-requisitos: Node.js 18+ e o backend rodando em `http://localhost:8000`.
+Pré-requisitos: Node.js 18+ e o backend rodando em `http://localhost:8080`.
 
 ```bash
 npm install
 npm run dev        # http://localhost:5173
 ```
 
-`npm run dev` usa `VITE_API_BASE_URL` de `.env.development` (`http://localhost:8000`). Para outro endereço, crie `.env.development.local` com o valor desejado.
+`npm run dev` usa `VITE_API_BASE_URL` de `.env.development` (`http://localhost:8080`). Para outro endereço, crie `.env.development.local` com o valor desejado.
 
 ## Scripts
 

@@ -14,7 +14,7 @@ contém endereço fixo.
 
 | Ambiente | Onde a variável é definida | Valor típico |
 | --- | --- | --- |
-| Desenvolvimento (`npm run dev`) | `.env.development` (versionado) | `http://localhost:8000` |
+| Desenvolvimento (`npm run dev`) | `.env.development` (versionado) | `http://localhost:8080` |
 | Override local | `.env.development.local` (não versionado) | qualquer URL |
 | Build manual para o Pages (`npm run build:pages`) | `.env.production.local` (não versionado) | URL HTTPS do backend |
 | Build pelo GitHub Actions | variável do repositório `VITE_API_BASE_URL` | URL HTTPS do backend |
@@ -145,7 +145,7 @@ aberta; "Nova conversa" limpa a tela.
 
 ```bash
 # Terminal 1: backend (na raiz do repositório do backend)
-uvicorn app.api:app --reload --host 127.0.0.1 --port 8000
+uvicorn app.api:app --reload --host 127.0.0.1 --port 8080
 
 # Terminal 2: frontend
 npm install
@@ -161,8 +161,8 @@ página mostra erro de conexão.
 O site publicado (`https://etuarda.github.io/frontendRAG/`) é servido por HTTPS. Para funcionar,
 ele precisa de:
 
-1. **Backend acessível por HTTPS**: servidor próprio ou túnel (ex.: `cloudflared tunnel --url http://localhost:8000`
-   ou `ngrok http 8000`).
+1. **Backend acessível por HTTPS**: servidor próprio ou túnel (ex.: `cloudflared tunnel --url http://localhost:8080`
+   ou `ngrok http 8080`).
 2. **CORS liberado no backend para a origem `https://etuarda.github.io`.** Hoje o contrato libera
    apenas as origens locais; sem essa mudança no backend, o navegador bloqueia as chamadas.
 3. **URL no build**, por um destes caminhos:
