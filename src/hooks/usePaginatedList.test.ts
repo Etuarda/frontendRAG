@@ -22,9 +22,13 @@ describe('usePaginatedList', () => {
     expect(result.current.hasMore).toBe(false);
   });
 
-  it('lista vazia vira estado empty', async () => {
-    const { result } = renderHook(() => usePaginatedList(async () => [], {}));
+  it('callback inline não causa loop nem repete a busca após re-render', async () => {
+    const calls = vi.fn(async () => []);
+    const { result, rerender } = renderHook(() => usePaginatedList(async () => calls(), {}));
     await waitFor(() => expect(result.current.status).toBe('empty'));
+    rerender();
+    await act(async () => {});
+    expect(calls).toHaveBeenCalledTimes(1);
   });
 
   it('falha vira estado error com a mensagem real', async () => {
@@ -34,6 +38,19 @@ describe('usePaginatedList', () => {
     await waitFor(() => expect(result.current.status).toBe('error'));
     expect(result.current.error).toBe('Inventário indisponível');
     expect(result.current.items).toEqual([]);
+  });
+
+  it('não substitui a busca atual por uma resposta antiga', async () => {
+    let resolveOld!: (items: number[]) => void;
+    const oldPage = new Promise<number[]>((resolve) => { resolveOld = resolve; });
+    const fetchPage = vi.fn(async (filters: { busca: string }) => filters.busca === '' ? oldPage : [2]);
+    const { result, rerender } = renderHook(({ busca }) => usePaginatedList(fetchPage, { busca }), {
+      initialProps: { busca: '' },
+    });
+    rerender({ busca: 'novo' });
+    await waitFor(() => expect(result.current.items).toEqual([2]));
+    await act(async () => { resolveOld([1]); });
+    expect(result.current.items).toEqual([2]);
   });
 
   it('recarrega do início quando os filtros mudam', async () => {

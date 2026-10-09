@@ -17,6 +17,8 @@ export function usePaginatedList<T, F>(fetchPage: PageFetcher<T, F>, filters: F)
   const [loadingMore, setLoadingMore] = useState(false);
   const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
   const requestRef = useRef(0);
+  const fetchPageRef = useRef(fetchPage);
+  useEffect(() => { fetchPageRef.current = fetchPage; }, [fetchPage]);
 
   // Filtros chegam como objeto novo a cada render; a chave evita recarregar sem mudança real.
   const filtersKey = JSON.stringify(filters);
@@ -26,8 +28,9 @@ export function usePaginatedList<T, F>(fetchPage: PageFetcher<T, F>, filters: F)
     setStatus('loading');
     setError(null);
     setLoadMoreError(null);
+    setLoadingMore(false);
     try {
-      const page = await fetchPage(JSON.parse(filtersKey) as F, { limit: PAGE_SIZE, offset: 0 });
+      const page = await fetchPageRef.current(JSON.parse(filtersKey) as F, { limit: PAGE_SIZE, offset: 0 });
       if (requestId !== requestRef.current) return;
       setItems(page);
       setHasMore(page.length === PAGE_SIZE);
@@ -37,7 +40,7 @@ export function usePaginatedList<T, F>(fetchPage: PageFetcher<T, F>, filters: F)
       setError(errorMessage(err));
       setStatus('error');
     }
-  }, [fetchPage, filtersKey]);
+  }, [filtersKey]);
 
   const loadMore = useCallback(async () => {
     if (loadingMore || !hasMore) return;
@@ -45,7 +48,7 @@ export function usePaginatedList<T, F>(fetchPage: PageFetcher<T, F>, filters: F)
     setLoadingMore(true);
     setLoadMoreError(null);
     try {
-      const page = await fetchPage(JSON.parse(filtersKey) as F, {
+      const page = await fetchPageRef.current(JSON.parse(filtersKey) as F, {
         limit: PAGE_SIZE,
         offset: items.length,
       });
@@ -55,12 +58,13 @@ export function usePaginatedList<T, F>(fetchPage: PageFetcher<T, F>, filters: F)
     } catch (err) {
       if (requestId === requestRef.current) setLoadMoreError(errorMessage(err));
     } finally {
-      setLoadingMore(false);
+      if (requestId === requestRef.current) setLoadingMore(false);
     }
-  }, [fetchPage, filtersKey, hasMore, items.length, loadingMore]);
+  }, [filtersKey, hasMore, items.length, loadingMore]);
 
   useEffect(() => {
-    loadFirstPage();
+    void loadFirstPage();
+    return () => { requestRef.current++; };
   }, [loadFirstPage]);
 
   return { items, status, error, reload: loadFirstPage, hasMore, loadMore, loadingMore, loadMoreError };

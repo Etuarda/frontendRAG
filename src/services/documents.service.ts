@@ -7,7 +7,7 @@ export interface DocumentFilters {
 }
 
 /** Tipos aceitos pelo filtro `tipo`, conforme o contrato. */
-export const DOCUMENT_TYPES = ['Normativo', 'Contrato', 'Ata de Registro', 'PCA'] as const;
+export const DOCUMENT_TYPES = ['Normativo', 'Contrato', 'Ata de Registro', 'PCA', 'Conversa sintética'] as const;
 
 /** Documentos do inventário oficial (GET /api/v1/explore/documentos). */
 export function listDocuments(

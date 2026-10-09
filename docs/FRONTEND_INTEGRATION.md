@@ -61,6 +61,11 @@ Erros específicos:
 
 Saudações e conversas sem busca aparecem como “Conversa — sem consulta ao acervo”.
 
+As buscas de texto esperam 400 ms sem digitação antes de chamar a API. O filtro
+de documentos oferece somente os tipos do contrato: `Normativo`, `Contrato`,
+`Ata de Registro`, `PCA` e `Conversa sintética`. Conteúdo sintético é identificado
+como tal na resposta e as conversas restritas não são expostas no catálogo.
+
 ## Histórico geral
 
 `GET /api/v1/history` não faz parte do site público e não há página de Histórico. A rota permanece protegida no backend para operação da demo.

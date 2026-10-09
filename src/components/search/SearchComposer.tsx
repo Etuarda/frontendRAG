@@ -27,7 +27,7 @@ const SHORTCUTS: Shortcut[] = [
     view: 'documentos',
     category: 'Documentos',
     title: 'Pesquisar documentos',
-    description: 'Normativos, contratos, atas de registro e PCA',
+    description: 'Normativos, contratos, atas, PCA e conversas sintéticas',
   },
   {
     view: 'orgaos',
@@ -73,7 +73,7 @@ export function SearchComposer({ loading, onSubmit, onNavigate }: SearchComposer
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Pergunte sobre contratos, editais, órgãos ou atas..."
+            placeholder="Ex.: O que o e-mail sintético da DPRJ diz sobre papel A4?"
             aria-label="Pergunta sobre contratações públicas"
             rows={2}
             maxLength={4000}
