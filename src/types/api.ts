@@ -18,11 +18,15 @@ export interface SourceRef {
 export interface RagQueryRequest {
   query: string;
   top_k?: number;
+  session_id?: string;
+  historico?: { pergunta: string; resposta: string | null }[];
 }
 
 export interface RagResponse {
   query_id: string;
   query: string;
+  session_id: string;
+  pergunta_reformulada?: string | null;
   answer: string;
   bases_consultadas: EvidenceNature[];
   sources_used: SourceRef[];

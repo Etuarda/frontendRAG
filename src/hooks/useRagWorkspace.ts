@@ -14,6 +14,7 @@ export function useRagWorkspace() {
   const [error, setError] = useState<string | null>(null);
   // Trocar de conversa invalida respostas ainda a caminho.
   const requestIdRef = useRef(0);
+  const sessionIdRef = useRef<string | null>(null);
 
   const loading = pendingQuery !== null;
 
@@ -26,9 +27,19 @@ export function useRagWorkspace() {
       setPendingQuery(normalized);
       setError(null);
 
+      // Histórico das últimas trocas para reformulação de continuação.
+      const historico = turns.map((turn) => ({
+        pergunta: turn.response.query,
+        resposta: turn.response.answer,
+      }));
+
       try {
-        const response = await queryRag(normalized);
+        const response = await queryRag(normalized, {
+          sessionId: sessionIdRef.current ?? undefined,
+          historico,
+        });
         if (requestId !== requestIdRef.current) return;
+        sessionIdRef.current = response.session_id;
         setTurns((current) => [...current, { response }]);
       } catch (err) {
         if (requestId === requestIdRef.current) setError(errorMessage(err));
@@ -36,7 +47,7 @@ export function useRagWorkspace() {
         if (requestId === requestIdRef.current) setPendingQuery(null);
       }
     },
-    [loading]
+    [loading, turns]
   );
 
   /** Marca o turno como avaliado só depois que o backend confirmou o feedback. */
@@ -50,6 +61,7 @@ export function useRagWorkspace() {
 
   const startNewConversation = useCallback(() => {
     requestIdRef.current++;
+    sessionIdRef.current = null;
     setTurns([]);
     setPendingQuery(null);
     setError(null);
