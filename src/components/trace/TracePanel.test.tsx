@@ -33,4 +33,18 @@ describe('TracePanel', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Tentar de novo' }));
     expect(await screen.findByText('Quais contratos?')).toBeInTheDocument();
   });
+
+  it('aceita trace legado com num_fontes e sinaliza trace incompleto', async () => {
+    stubFetch(() => json(200, { ...TRACE, completo: false, latencia_metodo: 'soma_etapas_legado', resumo: { ...TRACE.resumo, fontes_citadas: undefined, num_fontes: 3 } }));
+    render(<TracePanel sessionId="s_1234567890123456" queryId="q_1" onClose={vi.fn()} />);
+    expect(await screen.findByText(/trace incompleto/)).toBeInTheDocument();
+    expect(screen.getByText('3')).toBeInTheDocument();
+    expect(screen.getByText('tempo estimado')).toBeInTheDocument();
+  });
+
+  it('mostra selo de segunda tentativa', async () => {
+    stubFetch(() => json(200, { ...TRACE, etapas: [{ ...TRACE.etapas[0], stage: 'retrieval_bm25', detalhes: { tentativa_busca: 2 } }] }));
+    render(<TracePanel sessionId="s_1234567890123456" queryId="q_1" onClose={vi.fn()} />);
+    expect(await screen.findByText('2ª tentativa · sem filtros')).toBeInTheDocument();
+  });
 });

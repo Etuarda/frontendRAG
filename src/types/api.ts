@@ -43,6 +43,19 @@ export interface RagResponse {
 
 export type TraceBase = 'sql' | 'vetorial' | null;
 
+export interface TraceEvidence {
+  rank?: number; chunk_id?: string; base_id?: string; source_file?: string; score?: number | null;
+  dense_score?: number | null; sparse_score?: number | null; rrf_score?: number | null;
+  rerank_score?: number | null; identificador_pncp_exato?: boolean;
+  [key: string]: unknown;
+}
+
+export interface TraceFilterCondition { operator?: string; value?: unknown; optional?: boolean; }
+export interface TraceModelCall {
+  provider?: string; model_requested?: string; model?: string; status?: string;
+  tokens?: Record<string, number>; latencia_ms?: number; error_type?: string;
+}
+
 export interface TraceStage {
   ordem: number;
   stage: string;
@@ -67,6 +80,9 @@ export interface TraceSummary {
   confidence_level?: ConfidenceLevel;
   is_refusal?: boolean;
   refusal_reason?: string | null;
+  sql_retornou_evidencia?: boolean;
+  vetorial_retornou_evidencia?: boolean;
+  num_fontes?: number;
   [key: string]: unknown;
 }
 
@@ -80,6 +96,10 @@ export interface TraceResponse {
   latencia_total_ms: number;
   resumo: TraceSummary;
   etapas: TraceStage[];
+  status?: string;
+  completo?: boolean | null;
+  latencia_metodo?: string;
+  latencia_pipeline_ms?: number | null;
 }
 
 export interface SessionTraceQuestion {

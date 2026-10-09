@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type {
   SessionTraceResponse,
   TraceResponse,
@@ -8,6 +8,11 @@ import type {
 import { getQuestionTrace, getSessionTrace } from '../../services/trace.service';
 import { errorMessage } from '../../hooks/useApiResource';
 import { Icon } from '../ui/Icon';
+import { EvidenceTable as DetailedEvidenceTable, ranksBefore } from './EvidenceTable';
+import { FiltersBlock } from './FiltersBlock';
+import { ModelUsage } from './ModelUsage';
+import { StageNotes } from './StageNotes';
+import { STATUS_LABELS } from './traceLabels';
 
 interface TracePanelProps {
   sessionId: string;
@@ -45,10 +50,12 @@ function countVectorEvidence(value: TraceSummary['evidencias_vetorial']): number
 }
 
 function SummaryBadges({ summary, totalMs }: { summary: TraceSummary; totalMs: number }) {
-  const cited = Array.isArray(summary.fontes_citadas) ? summary.fontes_citadas.length : 0;
+  const cited = Array.isArray(summary.fontes_citadas) ? summary.fontes_citadas.length : Number(summary.num_fontes ?? 0);
+  const sql = summary.consultou_sql ? (summary.sql_retornou_evidencia === false ? 'SQL — sem resultado' : 'SQL') : '';
+  const vector = summary.consultou_vetorial ? (summary.vetorial_retornou_evidencia === false ? 'Vetorial — sem resultado' : 'Vetorial') : '';
   return (
     <div className="trace-summary-grid">
-      <div><span>Bases consultadas</span><strong>{summary.consultou_sql ? 'SQL ' : ''}{summary.consultou_vetorial ? 'Vetorial' : ''}{!summary.consultou_sql && !summary.consultou_vetorial ? 'Nenhuma' : ''}</strong></div>
+      <div><span>Bases consultadas</span><strong>{[sql, vector].filter(Boolean).join(' · ') || 'Nenhuma'}</strong></div>
       <div><span>Evidências SQL</span><strong>{Number(summary.evidencias_sql ?? 0)}</strong></div>
       <div><span>Evidências vetoriais</span><strong>{countVectorEvidence(summary.evidencias_vetorial)}</strong></div>
       <div><span>Fontes citadas</span><strong>{cited}</strong></div>
@@ -117,10 +124,14 @@ function StageCard({ stage, previousRanks }: { stage: TraceStage; previousRanks:
           <div><strong>{STAGE_LABELS[stage.stage] ?? stage.stage.replaceAll('_', ' ')}</strong>{stage.base ? <span className={`trace-base-badge trace-base-${stage.base}`}>{stage.base === 'sql' ? 'SQL' : 'Vetorial'}</span> : null}</div>
           <span>{formatMs(stage.latencia_ms)}</span>
         </div>
-        <span className={`trace-status trace-status-${stage.status === 'ok' ? 'ok' : 'warning'}`}>{stage.status}</span>
+        <span className={`trace-status trace-status-${stage.status === 'ok' ? 'ok' : 'warning'}`}>{STATUS_LABELS[stage.status] ?? stage.status}</span>
+        {stage.detalhes.tentativa_busca === 2 && ['retrieval_denso', 'retrieval_bm25', 'fusao_rrf', 'rerank'].includes(stage.stage) ? <span className="trace-attempt">2ª tentativa · sem filtros</span> : null}
         <details className="trace-stage-details">
           <summary>Ver detalhes</summary>
-          <EvidenceTable items={evidence} previousRanks={previousRanks} />
+          <DetailedEvidenceTable stage={stage} previousRanks={previousRanks} />
+          <FiltersBlock detalhes={stage.detalhes} />
+          <StageNotes stage={stage} />
+          <ModelUsage stage={stage} />
           {sql ? <section><h4>SQL executado</h4><JsonBlock value={sql} /></section> : null}
           {rows ? <section><h4>Resultado</h4><JsonBlock value={rows} /></section> : null}
           {prompt ? <details><summary>Ver prompt</summary><JsonBlock value={prompt} /></details> : null}
@@ -132,16 +143,14 @@ function StageCard({ stage, previousRanks }: { stage: TraceStage; previousRanks:
 }
 
 function QuestionTraceView({ trace }: { trace: TraceResponse }) {
-  const previousRanks = useMemo(() => {
-    const fusion = trace.etapas.find((stage) => stage.stage === 'fusao_rrf');
-    return new Map(asRecords(fusion?.detalhes.evidencias).map((item, index) => [evidenceId(item), Number(item.rank ?? index + 1)]));
-  }, [trace]);
   return (
     <>
+      {trace.completo === false ? <div className="trace-incomplete">Processamento não terminou — trace incompleto</div> : null}
       <p className="trace-question">{trace.pergunta ?? 'Pergunta sem texto registrado'}</p>
-      <SummaryBadges summary={trace.resumo} totalMs={trace.latencia_total_ms} />
+      <SummaryBadges summary={trace.resumo} totalMs={trace.latencia_pipeline_ms ?? trace.latencia_total_ms} />
+      {trace.latencia_metodo === 'soma_etapas_legado' ? <small>tempo estimado</small> : null}
       <ol className="trace-timeline">
-        {trace.etapas.map((stage) => <StageCard key={`${stage.ordem}-${stage.stage}`} stage={stage} previousRanks={previousRanks} />)}
+        {trace.etapas.map((stage, index) => <StageCard key={`${stage.ordem}-${stage.stage}`} stage={stage} previousRanks={stage.stage === 'rerank' ? ranksBefore(trace.etapas, index) : new Map()} />)}
       </ol>
     </>
   );

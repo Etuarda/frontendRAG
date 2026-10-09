@@ -2013,6 +2013,11 @@ a {
 .trace-evidence-table { width: 100%; border-collapse: collapse; font-size: 0.7rem; }
 .trace-evidence-table th, .trace-evidence-table td { padding: 0.45rem; border-bottom: 1px solid var(--border-subtle); text-align: left; }
 .trace-evidence-table td:nth-child(2) { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.trace-evidence-table small { display: block; color: var(--accent-gold-dark); white-space: nowrap; }
+.trace-attempt { display: inline-flex; margin: .45rem 0 0 .4rem; padding: .15rem .4rem; border-radius: 999px; background: #fff4dd; color: #745215; font-size: .68rem; }
+.trace-filters, .trace-model { display: grid; gap: .5rem; margin-top: .8rem; padding: .7rem; background: var(--bg-page); border-radius: var(--radius-sm); }
+.trace-filters p, .trace-model p { margin: .15rem 0; }
+.trace-incomplete { margin-bottom: 1rem; padding: .75rem; border-radius: var(--radius-sm); background: #fff4dd; color: #745215; font-weight: 600; }
 
 .trace-session-summary {
   display: grid;
