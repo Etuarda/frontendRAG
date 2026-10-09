@@ -1,12 +1,42 @@
-import { apiRequest } from './api';
-import type { QueryTrace, SessionTrace } from '../types/api';
+import { ApiError, apiRequest } from './api';
+import type { SessionTraceResponse, TraceResponse } from '../types/api';
 
-const auth = (sessionId: string) => ({ 'X-Session-Id': sessionId });
-
-export function getQueryTrace(queryId: string, sessionId: string): Promise<QueryTrace> {
-  return apiRequest(`/api/v1/trace/${encodeURIComponent(queryId)}`, { headers: auth(sessionId) });
+function traceError(error: unknown): never {
+  if (error instanceof ApiError && error.status === 401) {
+    throw new ApiError('Este caminho pertence a outra conversa.', 'http', 401, error.data);
+  }
+  if (error instanceof ApiError && error.status === 404) {
+    throw new ApiError(
+      'Este caminho não está disponível. A pergunta pode ser anterior ao recurso de rastreabilidade.',
+      'http',
+      404,
+      error.data
+    );
+  }
+  throw error;
 }
 
-export function getSessionTrace(sessionId: string): Promise<SessionTrace> {
-  return apiRequest(`/api/v1/sessions/${encodeURIComponent(sessionId)}/trace`, { headers: auth(sessionId) });
+function sessionHeader(sessionId: string): Record<string, string> {
+  return { 'X-Session-Id': sessionId };
+}
+
+export async function getQuestionTrace(queryId: string, sessionId: string): Promise<TraceResponse> {
+  try {
+    return await apiRequest<TraceResponse>(`/api/v1/trace/${encodeURIComponent(queryId)}`, {
+      headers: sessionHeader(sessionId),
+    });
+  } catch (error) {
+    return traceError(error);
+  }
+}
+
+export async function getSessionTrace(sessionId: string): Promise<SessionTraceResponse> {
+  try {
+    return await apiRequest<SessionTraceResponse>(
+      `/api/v1/sessions/${encodeURIComponent(sessionId)}/trace`,
+      { headers: sessionHeader(sessionId) }
+    );
+  } catch (error) {
+    return traceError(error);
+  }
 }

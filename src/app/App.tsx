@@ -40,14 +40,15 @@ export function App() {
         return (
           <ConsultaPage
             turns={workspace.turns}
+            sessionId={workspace.sessionId}
             pendingQuery={workspace.pendingQuery}
             loading={workspace.loading}
+            estimatedDurationMs={workspace.estimatedDurationMs}
             error={workspace.error}
             onSubmitQuery={workspace.submitQuery}
             onRated={workspace.markRated}
             onNewConversation={handleNewQuery}
             onNavigate={setActiveView}
-            sessionId={workspace.sessionId}
           />
         );
 

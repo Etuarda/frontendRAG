@@ -78,12 +78,12 @@ export async function apiRequest<T>(endpoint: string, options: RequestOptions = 
 
   let response: Response;
   try {
+    const headers: Record<string, string> = { ...options.headers };
+    if (body !== undefined) headers['Content-Type'] = 'application/json';
+
     response = await fetch(buildUrl(endpoint, params), {
       method,
-      headers: {
-        ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
-        ...headers,
-      },
+      headers: Object.keys(headers).length > 0 ? headers : undefined,
       body: body === undefined ? undefined : JSON.stringify(body),
       signal: controller.signal,
     });

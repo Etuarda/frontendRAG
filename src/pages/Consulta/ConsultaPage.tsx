@@ -4,13 +4,15 @@ import { SearchComposer } from '../../components/search/SearchComposer';
 import { FollowUpComposer } from '../../components/search/FollowUpComposer';
 import { ConversationTurnView } from '../../components/results/ConversationTurnView';
 import { Icon } from '../../components/ui/Icon';
-import { QueryTracePanel } from '../../components/trace/QueryTracePanel';
-import { SessionTracePanel } from '../../components/trace/SessionTracePanel';
+import { QueryProgress } from '../../components/results/QueryProgress';
+import { TracePanel } from '../../components/trace/TracePanel';
 
 interface ConsultaPageProps {
   turns: ConversationTurn[];
+  sessionId: string | null;
   pendingQuery: string | null;
   loading: boolean;
+  estimatedDurationMs: number;
   error: string | null;
   onSubmitQuery: (query: string) => void;
   onRated: (queryId: string, avaliacao: Avaliacao) => void;
@@ -21,8 +23,10 @@ interface ConsultaPageProps {
 
 export function ConsultaPage({
   turns,
+  sessionId,
   pendingQuery,
   loading,
+  estimatedDurationMs,
   error,
   onSubmitQuery,
   onRated,
@@ -31,6 +35,8 @@ export function ConsultaPage({
   sessionId,
 }: ConsultaPageProps) {
   const latestRef = useRef<HTMLDivElement>(null);
+  const [traceQueryId, setTraceQueryId] = useState<string | null>(null);
+  const [showSessionTrace, setShowSessionTrace] = useState(false);
   const hasThread = turns.length > 0 || pendingQuery !== null;
   const [queryTraceId, setQueryTraceId] = useState<string | null>(null);
   const [showSessionTrace, setShowSessionTrace] = useState(false);
@@ -71,7 +77,12 @@ export function ConsultaPage({
           <Icon name="plus" size={13} />
           <span>Nova conversa</span>
         </button>
-        </div>
+        {sessionId && turns.length > 0 ? (
+          <button type="button" className="btn-conversation-trace" onClick={() => setShowSessionTrace(true)}>
+            <Icon name="layers" size={14} />
+            Caminho da conversa
+          </button>
+        ) : null}
       </header>
 
       <div className="conversation-thread" aria-live="polite">
@@ -80,7 +91,7 @@ export function ConsultaPage({
             key={turn.response.query_id}
             ref={index === turns.length - 1 && !pendingQuery ? latestRef : null}
           >
-            <ConversationTurnView turn={turn} onRated={onRated} onViewTrace={setQueryTraceId} />
+            <ConversationTurnView turn={turn} onRated={onRated} onViewTrace={setTraceQueryId} />
           </div>
         ))}
 
@@ -89,17 +100,7 @@ export function ConsultaPage({
             <div className="turn-question">
               <p>{pendingQuery}</p>
             </div>
-            <div className="processing-indicator-box" role="status">
-              <div className="processing-spinner">
-                <Icon name="refresh-cw" size={20} className="spin-animation" />
-              </div>
-              <div className="processing-text-group">
-                <h2 className="processing-title">Consultando fontes oficiais...</h2>
-                <p className="processing-sub">
-                  A busca nas evidências pode levar alguns segundos.
-                </p>
-              </div>
-            </div>
+            <QueryProgress key={pendingQuery} estimatedDurationMs={estimatedDurationMs} />
           </div>
         ) : null}
 
@@ -109,8 +110,9 @@ export function ConsultaPage({
       <div className="conversation-composer-dock">
         <FollowUpComposer loading={loading} onSubmit={onSubmitQuery} />
       </div>
-      {queryTraceId && sessionId ? <QueryTracePanel queryId={queryTraceId} sessionId={sessionId} onClose={() => setQueryTraceId(null)} /> : null}
-      {showSessionTrace && sessionId ? <SessionTracePanel sessionId={sessionId} onClose={() => setShowSessionTrace(false)} onOpenQuery={(id) => { setShowSessionTrace(false); setQueryTraceId(id); }} /> : null}
+
+      {sessionId && traceQueryId ? <TracePanel sessionId={sessionId} queryId={traceQueryId} onClose={() => setTraceQueryId(null)} /> : null}
+      {sessionId && showSessionTrace ? <TracePanel sessionId={sessionId} onClose={() => setShowSessionTrace(false)} /> : null}
     </div>
   );
 }

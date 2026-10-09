@@ -25,6 +25,10 @@ export function ConversationTurnView({ turn, onRated, onViewTrace }: Conversatio
         <p>{response.query}</p>
       </div>
 
+      {response.pergunta_reformulada ? (
+        <p className="reformulated-query">Entendi como: {response.pergunta_reformulada}</p>
+      ) : null}
+
       {/* Sem evidência suficiente, o backend recusa; mostramos o motivo em vez de uma resposta. */}
       {response.is_refusal ? (
         <div className="refusal-box">
@@ -57,7 +61,9 @@ export function ConversationTurnView({ turn, onRated, onViewTrace }: Conversatio
       )}
 
       <div className="turn-meta-row">
-        <span className="turn-meta-tag">{EVIDENCE_LEVEL_LABELS[response.confidence_level]}</span>
+        {response.bases_consultadas.length === 0 && response.sources_used.length === 0 && !response.is_refusal ? (
+          <span className="turn-meta-tag">Conversa — sem consulta ao acervo</span>
+        ) : <span className="turn-meta-tag">{EVIDENCE_LEVEL_LABELS[response.confidence_level]}</span>}
         {response.bases_consultadas.map((natureza) => (
           <span key={natureza} className="turn-meta-tag">
             Base {NATUREZA_LABELS[natureza].toLowerCase()}
@@ -66,9 +72,9 @@ export function ConversationTurnView({ turn, onRated, onViewTrace }: Conversatio
         <button type="button" className="trace-link" onClick={() => onViewTrace(response.query_id)}>Ver caminho</button>
       </div>
 
-      {!response.is_refusal && response.bases_consultadas.length === 0 ? <p className="conversation-no-corpus">Conversa — sem consulta ao acervo</p> : null}
-      {response.pergunta_reformulada ? <p className="response-note">Entendi como: {response.pergunta_reformulada}</p> : null}
-      {response.avisos.map((aviso) => <p className="response-note" key={aviso}>{aviso}</p>)}
+      {response.avisos?.length ? (
+        <div className="response-notes">{response.avisos.map((aviso) => <p key={aviso}>{aviso}</p>)}</div>
+      ) : null}
 
       {response.sources_used.length > 0 ? (
         <section
@@ -101,6 +107,10 @@ export function ConversationTurnView({ turn, onRated, onViewTrace }: Conversatio
         value={turn.feedback}
         onRated={(avaliacao) => onRated(response.query_id, avaliacao)}
       />
+      <button type="button" className="btn-view-trace" onClick={() => onViewTrace(response.query_id)}>
+        <Icon name="layers" size={15} />
+        Ver caminho
+      </button>
     </article>
   );
 }
