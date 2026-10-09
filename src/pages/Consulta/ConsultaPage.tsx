@@ -18,7 +18,6 @@ interface ConsultaPageProps {
   onRated: (queryId: string, avaliacao: Avaliacao) => void;
   onNewConversation: () => void;
   onNavigate: (view: AppView) => void;
-  sessionId: string | null;
 }
 
 export function ConsultaPage({
@@ -32,14 +31,11 @@ export function ConsultaPage({
   onRated,
   onNewConversation,
   onNavigate,
-  sessionId,
 }: ConsultaPageProps) {
   const latestRef = useRef<HTMLDivElement>(null);
   const [traceQueryId, setTraceQueryId] = useState<string | null>(null);
   const [showSessionTrace, setShowSessionTrace] = useState(false);
   const hasThread = turns.length > 0 || pendingQuery !== null;
-  const [queryTraceId, setQueryTraceId] = useState<string | null>(null);
-  const [showSessionTrace, setShowSessionTrace] = useState(false);
 
   // Leva o usuário até a pergunta nova, em vez de deixá-lo no topo da conversa.
   useEffect(() => {
@@ -66,8 +62,6 @@ export function ConsultaPage({
           <span className="result-badge-label">CONVERSA</span>
           <h1 className="conversation-title">{title}</h1>
         </div>
-        <div className="conversation-header-actions">
-        {sessionId ? <button type="button" className="btn-new-search-link" onClick={() => setShowSessionTrace(true)}>Caminho da conversa</button> : null}
         <button
           type="button"
           className="btn-new-search-link"

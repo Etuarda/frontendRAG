@@ -69,7 +69,6 @@ export function ConversationTurnView({ turn, onRated, onViewTrace }: Conversatio
             Base {NATUREZA_LABELS[natureza].toLowerCase()}
           </span>
         ))}
-        <button type="button" className="trace-link" onClick={() => onViewTrace(response.query_id)}>Ver caminho</button>
       </div>
 
       {response.avisos?.length ? (

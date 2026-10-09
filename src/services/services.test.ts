@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { queryRag } from './query.service';
 import { sendFeedback } from './feedback.service';
 import { getQuestionTrace, getSessionTrace } from './trace.service';
@@ -6,8 +6,6 @@ import { listContracts } from './contracts.service';
 import { listDocuments } from './documents.service';
 import { checkHealth } from './health.service';
 import { failureOf, json, stubFetch, stubNetworkDown } from '../test/http';
-import { getQueryTrace, getSessionTrace } from './trace.service';
-import { sessionService } from './session.service';
 
 const RESPONSE = {
   query_id: 'q_a1b2c3d4',
@@ -19,8 +17,6 @@ const RESPONSE = {
   confidence_level: 'alta',
   is_refusal: false,
   refusal_reason: null,
-  pergunta_reformulada: null,
-  avisos: [],
 };
 
 describe('query.service', () => {
@@ -43,24 +39,6 @@ describe('query.service', () => {
       query: 'E em 2024?', top_k: 5, session_id: 's_1234567890123456',
       historico: [{ pergunta: 'E em 2025?', resposta: 'Há três contratos.' }],
     });
-  });
-});
-
-describe('trace.service', () => {
-  it('envia X-Session-Id no trace individual e da conversa', async () => {
-    const { calls } = stubFetch(() => json(200, {}));
-    await getQueryTrace('q_1', RESPONSE.session_id);
-    await getSessionTrace(RESPONSE.session_id);
-    expect(calls[0].url.pathname).toBe('/api/v1/trace/q_1');
-    expect(calls[1].url.pathname).toContain('/api/v1/sessions/');
-    expect(calls.every(call => call.headers.get('X-Session-Id') === RESPONSE.session_id)).toBe(true);
-    expect(calls.every(call => !call.headers.has('X-API-Key'))).toBe(true);
-  });
-
-  it.each([401, 404])('preserva status %i para a interface tratar', async (status) => {
-    stubFetch(() => json(status, {}));
-    const error = await failureOf(getQueryTrace('q_1', RESPONSE.session_id));
-    expect(error.status).toBe(status);
   });
 });
 

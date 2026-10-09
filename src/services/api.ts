@@ -72,7 +72,7 @@ export async function apiRequest<T>(endpoint: string, options: RequestOptions = 
     );
   }
 
-  const { method = 'GET', body, params, timeoutMs = TIMEOUT_DEFAULT_MS, headers } = options;
+  const { method = 'GET', body, params, timeoutMs = TIMEOUT_DEFAULT_MS } = options;
   const controller = new AbortController();
   const timer = window.setTimeout(() => controller.abort(), timeoutMs);
 

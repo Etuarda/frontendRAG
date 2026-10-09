@@ -4,7 +4,6 @@ import type { Avaliacao, ConversationTurn } from '../types/app';
 import { ApiError } from '../services/api';
 import { queryRag } from '../services/query.service';
 import { errorMessage } from './useApiResource';
-import { sessionService } from '../services/session.service';
 
 const SESSION_STORAGE_KEY = 'nexo:conversation-session-id';
 

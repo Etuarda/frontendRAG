@@ -27,8 +27,6 @@ export interface ConversationHistoryTurn {
   resposta?: string;
 }
 
-export interface ConversationHistoryItem { pergunta: string; resposta?: string; }
-
 export interface RagResponse {
   query_id: string;
   session_id: string;
