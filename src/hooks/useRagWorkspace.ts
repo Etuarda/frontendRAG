@@ -1,34 +1,95 @@
 import { useCallback, useRef, useState } from 'react';
-import type { HistoryItem } from '../types/api';
+import type { ConversationHistoryTurn } from '../types/api';
 import type { Avaliacao, ConversationTurn } from '../types/app';
+import { ApiError } from '../services/api';
 import { queryRag } from '../services/query.service';
 import { errorMessage } from './useApiResource';
 
-/**
- * Conversa da sessão atual: turnos em memória, sem persistência no navegador.
- * Cada consulta é gravada pelo próprio backend e aparece no Histórico.
- */
+const SESSION_STORAGE_KEY = 'nexo:conversation-session-id';
+
+function readStoredSession(): string | null {
+  try {
+    return window.sessionStorage.getItem(SESSION_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function storeSession(sessionId: string | null): void {
+  try {
+    if (sessionId) window.sessionStorage.setItem(SESSION_STORAGE_KEY, sessionId);
+    else window.sessionStorage.removeItem(SESSION_STORAGE_KEY);
+  } catch {
+    // A conversa continua funcional em memória quando o navegador bloqueia storage.
+  }
+}
+
+function historyFrom(turns: ConversationTurn[]): ConversationHistoryTurn[] {
+  return turns.slice(-10).map(({ response }) => ({
+    pergunta: response.query,
+    resposta: response.answer,
+  }));
+}
+
+/** Conversa atual, com sessão isolada por aba e contexto reenviado ao backend. */
 export function useRagWorkspace() {
-  const [turns, setTurns] = useState<ConversationTurn[]>([]);
+  const initialSession = useRef<string | null>(readStoredSession());
+  const sessionIdRef = useRef<string | null>(initialSession.current);
+  const turnsRef = useRef<ConversationTurn[]>([]);
+  const [turns, setTurnsState] = useState<ConversationTurn[]>([]);
+  const [sessionId, setSessionIdState] = useState<string | null>(initialSession.current);
   const [pendingQuery, setPendingQuery] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  // Trocar de conversa invalida respostas ainda a caminho.
+  const [estimatedDurationMs, setEstimatedDurationMs] = useState(82_000);
+  const queryStartedAtRef = useRef<number | null>(null);
   const requestIdRef = useRef(0);
+
+  const setTurns = useCallback((next: ConversationTurn[] | ((current: ConversationTurn[]) => ConversationTurn[])) => {
+    const value = typeof next === 'function' ? next(turnsRef.current) : next;
+    turnsRef.current = value;
+    setTurnsState(value);
+  }, []);
+
+  const setSessionId = useCallback((next: string | null) => {
+    sessionIdRef.current = next;
+    setSessionIdState(next);
+    storeSession(next);
+  }, []);
 
   const loading = pendingQuery !== null;
 
   const submitQuery = useCallback(
     async (queryText: string) => {
       const normalized = queryText.trim();
-      if (!normalized || loading) return;
+      if (!normalized || pendingQuery !== null) return;
 
       const requestId = ++requestIdRef.current;
+      queryStartedAtRef.current = Date.now();
       setPendingQuery(normalized);
       setError(null);
 
+      const context = () => ({
+        sessionId: sessionIdRef.current,
+        history: historyFrom(turnsRef.current),
+      });
+
       try {
-        const response = await queryRag(normalized);
+        let response;
+        try {
+          response = await queryRag(normalized, context());
+        } catch (err) {
+          // Uma sessão restaurada pode ter formato/validade incompatível com o servidor atual.
+          if (!(err instanceof ApiError) || err.status !== 422 || !sessionIdRef.current) throw err;
+          setSessionId(null);
+          response = await queryRag(normalized, {
+            history: historyFrom(turnsRef.current),
+          });
+        }
+
         if (requestId !== requestIdRef.current) return;
+        setSessionId(response.session_id);
+        const duration = Date.now() - (queryStartedAtRef.current ?? Date.now());
+        setEstimatedDurationMs((current) => Math.max(5_000, Math.round(current * 0.4 + duration * 0.6)));
         setTurns((current) => [...current, { response }]);
       } catch (err) {
         if (requestId === requestIdRef.current) setError(errorMessage(err));
@@ -36,47 +97,34 @@ export function useRagWorkspace() {
         if (requestId === requestIdRef.current) setPendingQuery(null);
       }
     },
-    [loading]
+    [pendingQuery, setSessionId, setTurns]
   );
 
-  /** Marca o turno como avaliado só depois que o backend confirmou o feedback. */
   const markRated = useCallback((queryId: string, avaliacao: Avaliacao) => {
     setTurns((current) =>
       current.map((turn) =>
         turn.response.query_id === queryId ? { ...turn, feedback: avaliacao } : turn
       )
     );
-  }, []);
+  }, [setTurns]);
 
   const startNewConversation = useCallback(() => {
     requestIdRef.current++;
     setTurns([]);
+    setSessionId(null);
     setPendingQuery(null);
     setError(null);
-  }, []);
-
-  /** Reabre uma consulta do histórico como início de conversa, para poder continuar perguntando. */
-  const openHistoryItem = useCallback((item: HistoryItem) => {
-    requestIdRef.current++;
-    const lastFeedback = item.feedback[item.feedback.length - 1];
-    setTurns([
-      {
-        response: { ...item.resposta, query_id: item.query_id },
-        feedback: lastFeedback?.avaliacao,
-      },
-    ]);
-    setPendingQuery(null);
-    setError(null);
-  }, []);
+  }, [setSessionId, setTurns]);
 
   return {
     turns,
+    sessionId,
     pendingQuery,
     loading,
+    estimatedDurationMs,
     error,
     submitQuery,
     markRated,
     startNewConversation,
-    openHistoryItem,
   };
 }

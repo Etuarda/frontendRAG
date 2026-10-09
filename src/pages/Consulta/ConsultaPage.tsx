@@ -1,14 +1,18 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { AppView, Avaliacao, ConversationTurn } from '../../types/app';
 import { SearchComposer } from '../../components/search/SearchComposer';
 import { FollowUpComposer } from '../../components/search/FollowUpComposer';
 import { ConversationTurnView } from '../../components/results/ConversationTurnView';
 import { Icon } from '../../components/ui/Icon';
+import { QueryProgress } from '../../components/results/QueryProgress';
+import { TracePanel } from '../../components/trace/TracePanel';
 
 interface ConsultaPageProps {
   turns: ConversationTurn[];
+  sessionId: string | null;
   pendingQuery: string | null;
   loading: boolean;
+  estimatedDurationMs: number;
   error: string | null;
   onSubmitQuery: (query: string) => void;
   onRated: (queryId: string, avaliacao: Avaliacao) => void;
@@ -18,8 +22,10 @@ interface ConsultaPageProps {
 
 export function ConsultaPage({
   turns,
+  sessionId,
   pendingQuery,
   loading,
+  estimatedDurationMs,
   error,
   onSubmitQuery,
   onRated,
@@ -27,6 +33,8 @@ export function ConsultaPage({
   onNavigate,
 }: ConsultaPageProps) {
   const latestRef = useRef<HTMLDivElement>(null);
+  const [traceQueryId, setTraceQueryId] = useState<string | null>(null);
+  const [showSessionTrace, setShowSessionTrace] = useState(false);
   const hasThread = turns.length > 0 || pendingQuery !== null;
 
   // Leva o usuário até a pergunta nova, em vez de deixá-lo no topo da conversa.
@@ -63,6 +71,12 @@ export function ConsultaPage({
           <Icon name="plus" size={13} />
           <span>Nova conversa</span>
         </button>
+        {sessionId && turns.length > 0 ? (
+          <button type="button" className="btn-conversation-trace" onClick={() => setShowSessionTrace(true)}>
+            <Icon name="layers" size={14} />
+            Caminho da conversa
+          </button>
+        ) : null}
       </header>
 
       <div className="conversation-thread" aria-live="polite">
@@ -71,7 +85,7 @@ export function ConsultaPage({
             key={turn.response.query_id}
             ref={index === turns.length - 1 && !pendingQuery ? latestRef : null}
           >
-            <ConversationTurnView turn={turn} onRated={onRated} />
+            <ConversationTurnView turn={turn} onRated={onRated} onViewTrace={setTraceQueryId} />
           </div>
         ))}
 
@@ -80,17 +94,7 @@ export function ConsultaPage({
             <div className="turn-question">
               <p>{pendingQuery}</p>
             </div>
-            <div className="processing-indicator-box" role="status">
-              <div className="processing-spinner">
-                <Icon name="refresh-cw" size={20} className="spin-animation" />
-              </div>
-              <div className="processing-text-group">
-                <h2 className="processing-title">Consultando fontes oficiais...</h2>
-                <p className="processing-sub">
-                  A busca nas evidências pode levar alguns segundos.
-                </p>
-              </div>
-            </div>
+            <QueryProgress key={pendingQuery} estimatedDurationMs={estimatedDurationMs} />
           </div>
         ) : null}
 
@@ -100,6 +104,9 @@ export function ConsultaPage({
       <div className="conversation-composer-dock">
         <FollowUpComposer loading={loading} onSubmit={onSubmitQuery} />
       </div>
+
+      {sessionId && traceQueryId ? <TracePanel sessionId={sessionId} queryId={traceQueryId} onClose={() => setTraceQueryId(null)} /> : null}
+      {sessionId && showSessionTrace ? <TracePanel sessionId={sessionId} onClose={() => setShowSessionTrace(false)} /> : null}
     </div>
   );
 }

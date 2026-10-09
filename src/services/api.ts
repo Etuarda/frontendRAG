@@ -28,6 +28,7 @@ interface RequestOptions {
   body?: unknown;
   params?: Record<string, QueryValue>;
   timeoutMs?: number;
+  headers?: Record<string, string>;
 }
 
 // Mensagens por status seguem a seção 13 do contrato.
@@ -77,9 +78,12 @@ export async function apiRequest<T>(endpoint: string, options: RequestOptions = 
 
   let response: Response;
   try {
+    const headers: Record<string, string> = { ...options.headers };
+    if (body !== undefined) headers['Content-Type'] = 'application/json';
+
     response = await fetch(buildUrl(endpoint, params), {
       method,
-      headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
+      headers: Object.keys(headers).length > 0 ? headers : undefined,
       body: body === undefined ? undefined : JSON.stringify(body),
       signal: controller.signal,
     });

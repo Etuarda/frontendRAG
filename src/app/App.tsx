@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import type { HistoryItem } from '../types/api';
 import type { AppView } from '../types/app';
 import { useRagWorkspace } from '../hooks/useRagWorkspace';
 import { useSidebar } from '../hooks/useSidebar';
@@ -9,7 +8,6 @@ import { Icon } from '../components/ui/Icon';
 import nexoLogo from '../assets/nexo.png';
 
 import { ConsultaPage } from '../pages/Consulta/ConsultaPage';
-import { HistoricoPage } from '../pages/Historico/HistoricoPage';
 import { ContratacoesPage } from '../pages/Contratacoes/ContratacoesPage';
 import { DocumentosPage } from '../pages/Documentos/DocumentosPage';
 import { OrgaosPage } from '../pages/Orgaos/OrgaosPage';
@@ -29,11 +27,6 @@ export function App() {
     setActiveView('consulta');
   };
 
-  const handleOpenHistoryItem = (item: HistoryItem) => {
-    workspace.openHistoryItem(item);
-    setActiveView('consulta');
-  };
-
   // Busca vinda dos catálogos é um assunto novo, então abre uma conversa própria.
   const handleDirectSearch = (queryText: string) => {
     workspace.startNewConversation();
@@ -47,21 +40,15 @@ export function App() {
         return (
           <ConsultaPage
             turns={workspace.turns}
+            sessionId={workspace.sessionId}
             pendingQuery={workspace.pendingQuery}
             loading={workspace.loading}
+            estimatedDurationMs={workspace.estimatedDurationMs}
             error={workspace.error}
             onSubmitQuery={workspace.submitQuery}
             onRated={workspace.markRated}
             onNewConversation={handleNewQuery}
             onNavigate={setActiveView}
-          />
-        );
-
-      case 'historico':
-        return (
-          <HistoricoPage
-            onOpenItem={handleOpenHistoryItem}
-            onNewQuery={handleNewQuery}
           />
         );
 

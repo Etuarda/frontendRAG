@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { queryRag } from './query.service';
 import { sendFeedback } from './feedback.service';
-import { getHistory } from './history.service';
+import { getQuestionTrace, getSessionTrace } from './trace.service';
 import { listContracts } from './contracts.service';
 import { listDocuments } from './documents.service';
 import { checkHealth } from './health.service';
@@ -9,6 +9,7 @@ import { failureOf, json, stubFetch, stubNetworkDown } from '../test/http';
 
 const RESPONSE = {
   query_id: 'q_a1b2c3d4',
+  session_id: 's_1234567890123456',
   query: 'Quais contratos?',
   answer: 'Resposta.',
   bases_consultadas: ['estruturada'],
@@ -19,13 +20,25 @@ const RESPONSE = {
 };
 
 describe('query.service', () => {
-  it('envia somente query e top_k, como no contrato', async () => {
+  it('na primeira pergunta envia query e top_k sem session_id', async () => {
     const { calls } = stubFetch(() => json(200, RESPONSE));
     const result = await queryRag('  Quais contratos?  ');
 
     expect(calls[0].url.pathname).toBe('/api/v1/query');
     expect(calls[0].body).toEqual({ query: 'Quais contratos?', top_k: 5 });
     expect(result.query_id).toBe('q_a1b2c3d4');
+  });
+
+  it('reenvia session_id e as trocas anteriores nas perguntas seguintes', async () => {
+    const { calls } = stubFetch(() => json(200, RESPONSE));
+    await queryRag('E em 2024?', {
+      sessionId: 's_1234567890123456',
+      history: [{ pergunta: 'E em 2025?', resposta: 'Há três contratos.' }],
+    });
+    expect(calls[0].body).toEqual({
+      query: 'E em 2024?', top_k: 5, session_id: 's_1234567890123456',
+      historico: [{ pergunta: 'E em 2025?', resposta: 'Há três contratos.' }],
+    });
   });
 });
 
@@ -56,13 +69,30 @@ describe('feedback.service', () => {
   });
 });
 
-describe('history.service', () => {
-  it('pede o máximo permitido pelo contrato', async () => {
-    const { calls } = stubFetch(() => json(200, []));
-    await getHistory();
+describe('trace services', () => {
+  it('usa X-Session-Id no caminho da pergunta e nunca X-API-Key', async () => {
+    const { calls } = stubFetch(() => json(200, {}));
+    await getQuestionTrace('q_1', 's_1234567890123456');
+    expect(calls[0].url.pathname).toBe('/api/v1/trace/q_1');
+    expect(calls[0].headers.get('X-Session-Id')).toBe('s_1234567890123456');
+    expect(calls[0].headers.has('X-API-Key')).toBe(false);
+  });
 
-    expect(calls[0].url.pathname).toBe('/api/v1/history');
-    expect(calls[0].url.searchParams.get('limit')).toBe('100');
+  it('usa a sessão na rota do caminho da conversa', async () => {
+    const { calls } = stubFetch(() => json(200, {}));
+    await getSessionTrace('s_1234567890123456');
+    expect(calls[0].url.pathname).toBe('/api/v1/sessions/s_1234567890123456/trace');
+    expect(calls[0].headers.get('X-Session-Id')).toBe('s_1234567890123456');
+  });
+
+  it('traduz 401 sem tratar como login', async () => {
+    stubFetch(() => json(401, {}));
+    await expect(getQuestionTrace('q_1', 's_outra_conversa_123')).rejects.toThrow('outra conversa');
+  });
+
+  it('explica o 404 de traces antigos', async () => {
+    stubFetch(() => json(404, {}));
+    await expect(getQuestionTrace('q_antiga', 's_1234567890123456')).rejects.toThrow('anterior');
   });
 });
 

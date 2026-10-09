@@ -18,10 +18,18 @@ export interface SourceRef {
 export interface RagQueryRequest {
   query: string;
   top_k?: number;
+  session_id?: string;
+  historico?: ConversationHistoryTurn[];
+}
+
+export interface ConversationHistoryTurn {
+  pergunta: string;
+  resposta?: string;
 }
 
 export interface RagResponse {
   query_id: string;
+  session_id: string;
   query: string;
   answer: string;
   bases_consultadas: EvidenceNature[];
@@ -29,6 +37,70 @@ export interface RagResponse {
   confidence_level: ConfidenceLevel;
   is_refusal: boolean;
   refusal_reason: string | null;
+  pergunta_reformulada?: string | null;
+  avisos?: string[];
+}
+
+export type TraceBase = 'sql' | 'vetorial' | null;
+
+export interface TraceStage {
+  ordem: number;
+  stage: string;
+  base: TraceBase;
+  status: string;
+  ts: string;
+  latencia_ms: number;
+  input: unknown;
+  output: unknown;
+  tokens: Record<string, number> | null;
+  modelo: string | null;
+  detalhes: Record<string, unknown>;
+}
+
+export interface TraceSummary {
+  caminho?: string | null;
+  consultou_sql?: boolean;
+  consultou_vetorial?: boolean;
+  evidencias_sql?: number;
+  evidencias_vetorial?: number | Record<string, number>;
+  fontes_citadas?: string[];
+  confidence_level?: ConfidenceLevel;
+  is_refusal?: boolean;
+  refusal_reason?: string | null;
+  [key: string]: unknown;
+}
+
+export interface TraceResponse {
+  query_id: string;
+  session_id: string | null;
+  run_ids: string[];
+  pergunta: string | null;
+  inicio: string;
+  fim: string;
+  latencia_total_ms: number;
+  resumo: TraceSummary;
+  etapas: TraceStage[];
+}
+
+export interface SessionTraceQuestion {
+  ordem: number;
+  query_id: string;
+  pergunta: string | null;
+  inicio: string;
+  fim: string;
+  latencia_total_ms: number;
+  resumo: TraceSummary;
+  etapas: string[];
+}
+
+export interface SessionTraceResponse {
+  session_id: string;
+  inicio: string;
+  fim: string;
+  total_perguntas: number;
+  consultou_sql: number;
+  consultou_vetorial: number;
+  perguntas: SessionTraceQuestion[];
 }
 
 export interface FeedbackRequest {
@@ -48,7 +120,7 @@ export interface HistoryItem {
   run_id: string;
   ts: string;
   query: string;
-  resposta: Omit<RagResponse, 'query_id'>;
+  resposta: Omit<RagResponse, 'query_id' | 'session_id'>;
   feedback: FeedbackEntry[];
 }
 

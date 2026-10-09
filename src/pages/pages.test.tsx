@@ -2,7 +2,6 @@ import { describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ContratacoesPage } from './Contratacoes/ContratacoesPage';
-import { HistoricoPage } from './Historico/HistoricoPage';
 import { App } from '../app/App';
 import { json, stubFetch, stubNetworkDown } from '../test/http';
 
@@ -41,16 +40,6 @@ describe('ContratacoesPage', () => {
     expect(await screen.findByText(/temporariamente indisponível/)).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: /Tentar novamente/ }));
     expect(await screen.findByText(CONTRATO.numero_contrato)).toBeInTheDocument();
-  });
-});
-
-describe('HistoricoPage', () => {
-  it('lista vazia do backend mostra estado vazio, sem itens de exemplo', async () => {
-    stubFetch(() => json(200, []));
-    render(<HistoricoPage onOpenItem={vi.fn()} onNewQuery={vi.fn()} />);
-
-    expect(await screen.findByText('Nenhuma consulta registrada ainda.')).toBeInTheDocument();
-    expect(screen.queryAllByRole('listitem')).toHaveLength(0);
   });
 });
 

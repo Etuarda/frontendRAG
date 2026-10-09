@@ -7,10 +7,11 @@ import { EVIDENCE_LEVEL_LABELS, NATUREZA_LABELS, refusalLabel } from '../../cons
 interface ConversationTurnViewProps {
   turn: ConversationTurn;
   onRated: (queryId: string, avaliacao: Avaliacao) => void;
+  onViewTrace: (queryId: string) => void;
 }
 
 /** Uma pergunta da conversa com a resposta, as fontes e a avaliação. */
-export function ConversationTurnView({ turn, onRated }: ConversationTurnViewProps) {
+export function ConversationTurnView({ turn, onRated, onViewTrace }: ConversationTurnViewProps) {
   const { response } = turn;
 
   // A API separa parágrafos por linha em branco; um <p> por bloco facilita a leitura.
@@ -23,6 +24,10 @@ export function ConversationTurnView({ turn, onRated }: ConversationTurnViewProp
       <div className="turn-question">
         <p>{response.query}</p>
       </div>
+
+      {response.pergunta_reformulada ? (
+        <p className="reformulated-query">Entendi como: {response.pergunta_reformulada}</p>
+      ) : null}
 
       {/* Sem evidência suficiente, o backend recusa; mostramos o motivo em vez de uma resposta. */}
       {response.is_refusal ? (
@@ -56,13 +61,19 @@ export function ConversationTurnView({ turn, onRated }: ConversationTurnViewProp
       )}
 
       <div className="turn-meta-row">
-        <span className="turn-meta-tag">{EVIDENCE_LEVEL_LABELS[response.confidence_level]}</span>
+        {response.bases_consultadas.length === 0 && response.sources_used.length === 0 && !response.is_refusal ? (
+          <span className="turn-meta-tag">Conversa — sem consulta ao acervo</span>
+        ) : <span className="turn-meta-tag">{EVIDENCE_LEVEL_LABELS[response.confidence_level]}</span>}
         {response.bases_consultadas.map((natureza) => (
           <span key={natureza} className="turn-meta-tag">
             Base {NATUREZA_LABELS[natureza].toLowerCase()}
           </span>
         ))}
       </div>
+
+      {response.avisos?.length ? (
+        <div className="response-notes">{response.avisos.map((aviso) => <p key={aviso}>{aviso}</p>)}</div>
+      ) : null}
 
       {response.sources_used.length > 0 ? (
         <section
@@ -95,6 +106,10 @@ export function ConversationTurnView({ turn, onRated }: ConversationTurnViewProp
         value={turn.feedback}
         onRated={(avaliacao) => onRated(response.query_id, avaliacao)}
       />
+      <button type="button" className="btn-view-trace" onClick={() => onViewTrace(response.query_id)}>
+        <Icon name="layers" size={15} />
+        Ver caminho
+      </button>
     </article>
   );
 }

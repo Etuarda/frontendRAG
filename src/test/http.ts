@@ -6,6 +6,7 @@ export interface RecordedCall {
   url: URL;
   method: string;
   body: unknown;
+  headers: Headers;
 }
 
 type Handler = (call: RecordedCall) => Response | Promise<Response>;
@@ -25,6 +26,7 @@ export function stubFetch(handler: Handler) {
       url: new URL(String(input)),
       method: init?.method ?? 'GET',
       body: typeof init?.body === 'string' ? JSON.parse(init.body) : undefined,
+      headers: new Headers(init?.headers),
     };
     calls.push(call);
     return handler(call);

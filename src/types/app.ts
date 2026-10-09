@@ -3,7 +3,6 @@ import type { FeedbackRequest, RagResponse } from './api';
 
 export type AppView =
   | 'consulta'
-  | 'historico'
   | 'contratacoes'
   | 'documentos'
   | 'orgaos'
