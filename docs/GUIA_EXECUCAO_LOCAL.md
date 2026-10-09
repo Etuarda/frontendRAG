@@ -1,286 +1,248 @@
-# Guia: rodar o NEXO RJ localmente (backend + frontend)
+# Rodar o NEXO RJ após um clone
 
-Passo a passo, na ordem de execução, para clonar o backend, preencher o `.env`, subir a API,
-conectar o frontend e fazer perguntas. Os comandos são para **Windows (PowerShell)**; quando
-muda algo no macOS/Linux, está indicado.
+Este guia instala **dois repositórios** e conecta a interface ao RAG real. Não precisa
+coletar PDFs, executar OCR, gerar embeddings ou montar índices para perguntar.
 
-Ao final você terá:
-
-| Serviço | Endereço | Repositório |
+| Serviço | Repositório/branch | Endereço local |
 | --- | --- | --- |
-| Backend (FastAPI + pipeline RAG) | `http://localhost:8080` | `Diogooliveira10/rag-grande-desafio-grupo04-cenario01` |
-| Frontend (React + Vite) | `http://localhost:5173` | `Etuarda/frontendRAG` |
+| Backend | `Diogooliveira10/rag-grande-desafio-grupo04-cenario01`, **`joao-reis`** | `http://localhost:8080` |
+| Frontend (esta fork) | `sevenRevy/frontendRAG`, **`main`** | `http://localhost:5173` |
 
-São necessários **dois terminais abertos ao mesmo tempo**: um para o backend e outro para o frontend.
+Use dois terminais: um fica executando a API, outro o Vite. Clonar apenas o frontend
+não instala nem inicia o backend. O GitHub Pages também não executa o backend.
 
----
+## 1. Pré-requisitos
 
-## 0. Pré-requisitos
+- Git;
+- **Python 3.12 de 64 bits**, recomendado pela compatibilidade com FAISS/PyTorch;
+- **Node.js LTS 22+** com npm;
+- internet para o endpoint compartilhado de geração/embeddings e, na primeira
+  execução com rerank, para baixar o modelo (~470 MB).
 
-| Ferramenta | Versão | Como conferir |
-| --- | --- | --- |
-| Git | qualquer recente | `git --version` |
-| Python | 3.11 ou mais novo (testado com 3.14) | `python --version` |
-| Node.js | 18 ou mais novo | `node --version` |
-| Internet | obrigatória | o LLM da turma roda em servidor remoto |
+Reserve alguns GB para o clone, ambiente Python, PyTorch e cache do modelo.
+PostgreSQL, Ollama local, GPU e Tesseract **não são necessários** para este fluxo.
 
-Espaço em disco: reserve cerca de **3 GB**. As dependências incluem o PyTorch, e o modelo de
-rerank (~470 MB) é baixado na primeira pergunta.
+Confira `git --version`, `node --version` e `npm --version`. No Windows, confira
+`py -3.12 --version`; no Linux/macOS, `python3.12 --version`.
 
----
+Se o PowerShell bloquear `npm.ps1`, use `npm.cmd` no lugar de `npm`.
 
-## Parte A: backend
+## 2. Clonar o backend na branch correta
 
-### Passo 1. Clonar o repositório do backend
+Em uma pasta de sua escolha, execute:
 
-```powershell
-cd $HOME
-git clone https://github.com/Diogooliveira10/rag-grande-desafio-grupo04-cenario01.git
+```bash
+git clone --branch joao-reis --single-branch https://github.com/Diogooliveira10/rag-grande-desafio-grupo04-cenario01.git
 cd rag-grande-desafio-grupo04-cenario01
 ```
 
-O clone já traz tudo o que é preciso para responder perguntas: os índices FAISS das quatro bases
-(`index/`), a base estruturada (`data/structured/base_estruturada.sqlite`) e o inventário do corpus.
-**Não é preciso coletar o corpus nem montar índices** para rodar localmente.
+O backend publicado nessa branch inclui:
 
-### Passo 2. Criar e ativar o ambiente virtual
+- índices FAISS e metadados em `index/` (quatro bases oficiais e suplemento sintético);
+- SQLite em `data/structured/base_estruturada.sqlite`;
+- corpus normalizado/inventário utilizados pelo catálogo.
+
+Não use uma branch diferente sem conferir a compatibilidade da API e dos dados.
+
+## 3. Instalar o backend
+
+### Windows (PowerShell)
+
+Os comandos usam diretamente o Python do ambiente virtual; **não é necessário
+ativá-lo nem alterar a política de execução do PowerShell**.
 
 ```powershell
-python -m venv .venv
-.venv\Scripts\Activate.ps1
+py -3.12 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install --upgrade pip
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+Copy-Item .env.example .env
 ```
 
-macOS/Linux: `python3 -m venv .venv` e depois `source .venv/bin/activate`.
+### Linux/macOS
 
-Se o PowerShell recusar a ativação ("execução de scripts foi desabilitada"), libere scripts só para
-o seu usuário e tente de novo:
-
-```powershell
-Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
-.venv\Scripts\Activate.ps1
+```bash
+python3.12 -m venv .venv
+.venv/bin/python -m pip install --upgrade pip
+.venv/bin/python -m pip install -r requirements.txt
+cp .env.example .env
 ```
 
-Com o ambiente ativo, o prompt começa com `(.venv)`. **Todos os comandos do backend a partir daqui
-devem rodar com o `(.venv)` ativo.**
+Não sobrescreva um `.env` existente em uma instalação que já tenha configurações
+próprias. Use sempre o Python da `.venv` para instalar e executar o backend.
 
-### Passo 3. Instalar as dependências
+## 4. Conferir a configuração do backend
 
-```powershell
-python -m pip install --upgrade pip
-pip install -r requirements.txt
+O `.env.example` traz os padrões do endpoint da turma. Para o fluxo local:
+
+```env
+OLLAMA_URL=http://ecoa-llm.duckdns.org:11434/v1
+OLLAMA_API_KEY=ollama
+GENERATION_MODEL=qcwind/qwen3-8b-instruct-Q4-K-M
+EMBEDDING_MODEL=xagi/qwen3-embedding:0.6b-q4_k_m
+DATABASE_URL=
 ```
 
-Demora alguns minutos (PyTorch, FAISS, sentence-transformers). Ao terminar, confira os três
-pacotes que o pipeline usa na hora da pergunta:
+- `DATABASE_URL=` vazio usa o SQLite incluído. Não precisa criar banco nem tabela.
+- Não troque o provedor/modelo de embeddings sem reconstruir índices compatíveis.
+- `RERANK_ENABLED=true` é o padrão. Para uma primeira execução leve, altere para
+  **`RERANK_ENABLED=false`**: evita o download/carregamento do cross-encoder,
+  mas muda a ordenação e pode reduzir a qualidade da recuperação.
+- As origens `http://localhost:5173` e `http://127.0.0.1:5173` já são liberadas.
+- `OPENROUTER_API_KEY` é opcional; não precisa de chave privada para testar o
+  endpoint ECOA padrão. Se esse endpoint estiver indisponível, as perguntas
+  factuais podem falhar mesmo com `/health` online.
+- `.env` é local e ignorado pelo Git. Nunca faça commit de credenciais.
+
+**Histórico na demo:** está temporariamente aberto, por decisão do operador, e
+lista consultas de todos os usuários. Não coloque conteúdo sensível nas perguntas
+ou comentários. Na versão atual do backend, `RAG_API_KEY` continua protegendo
+os traces administrativos, mas não é necessária para o Histórico. Se uma versão
+anterior retornar “Endpoint desabilitado: defina RAG_API_KEY”, ela ainda tem a
+proteção antiga: precisa da correção do backend e de reinício da API. Definir a
+chave só no servidor não autentica o frontend. Nunca publique a chave em `VITE_*`.
+
+## 5. Iniciar a API — terminal 1
+
+Na raiz do backend, no Windows:
 
 ```powershell
-python -c "import faiss, sentence_transformers, uvicorn; print('dependências ok')"
+.\.venv\Scripts\python.exe -m uvicorn app.api:app --reload --host 127.0.0.1 --port 8080
 ```
 
-Se aparecer `ModuleNotFoundError`, rode o `pip install -r requirements.txt` de novo. Sem o `faiss`,
-a API sobe, mas **toda pergunta falha** com "Nao foi possivel processar a consulta.".
+No Linux/macOS:
 
-### Passo 4. Criar e preencher o `.env`
-
-```powershell
-copy .env.example .env
+```bash
+.venv/bin/python -m uvicorn app.api:app --reload --host 127.0.0.1 --port 8080
 ```
 
-macOS/Linux: `cp .env.example .env`.
+Deixe rodando. Abra <http://localhost:8080/health>: deve retornar
+`{"status":"ok"}`. A documentação interativa fica em <http://localhost:8080/docs>.
+**Saúde online não garante que o LLM esteja disponível.**
 
-O `.env.example` **já vem com os valores da turma**: para rodar localmente, não é preciso mudar nada.
-O que cada grupo de variáveis faz:
+## 6. Clonar esta fork — terminal 2
 
-| Variável | Valor padrão | Precisa mudar? |
-| --- | --- | --- |
-| `OLLAMA_URL` | `http://ecoa-llm.duckdns.org:11434/v1` | Não. É o endpoint de LLM e embeddings da turma. |
-| `OLLAMA_API_KEY` | `ollama` | Não. |
-| `GENERATION_MODEL` | `qcwind/qwen3-8b-instruct-Q4-K-M` | Não. |
-| `EMBEDDING_MODEL` | `xagi/qwen3-embedding:0.6b-q4_k_m` | Não. Deve ser o mesmo modelo usado para montar os índices. |
-| `GENERATION_TIMEOUT` | `180` | Não. Tempo máximo (s) de cada chamada ao LLM. |
-| `RERANK_ENABLED` | `true` | Opcional. `false` pula o rerank: a primeira pergunta fica mais rápida e o modelo de 470 MB não é baixado. |
-| `DATABASE_URL` | vazio | Não. Vazio = usa o SQLite versionado. Preencha só se tiver a connection string do Postgres (Neon) do projeto. |
-| `CORS_ALLOW_ORIGINS` | `https://etuarda.github.io` | Não. `localhost:5173` e `127.0.0.1:5173` já são liberados por padrão. Acrescente outras origens separadas por vírgula, se precisar. |
-| `OPENAI_*`, `CUSTOM_*` | vazios | Não. Só para usar outro provedor compatível com OpenAI. |
-| `TESSERACT_CMD`, `OCR_*` | vazios/padrão | Não. OCR só é usado na coleta de PDFs escaneados. |
+Na pasta onde deseja manter o frontend (fora da pasta do backend):
 
-O `.env` é ignorado pelo Git: nunca faça commit dele, principalmente se você preencher o `DATABASE_URL`.
-
-### Passo 5. Testar a conexão com o LLM da turma
-
-```powershell
-python llm_ecoa.py
-```
-
-O script chama o endpoint de geração e de embeddings. Se ele falhar, as perguntas também vão
-falhar. Verifique a internet e o `OLLAMA_URL` antes de seguir.
-
-### Passo 6. (Opcional) Rodar os testes do backend
-
-```powershell
-pytest tests/ -m "not llm"
-```
-
-São os testes offline (unitários e de contrato). Não precisam de internet.
-
-### Passo 7. Subir a API
-
-No **terminal 1**, com o `(.venv)` ativo e dentro da pasta do backend:
-
-```powershell
-uvicorn app.api:app --reload --host 127.0.0.1 --port 8080
-```
-
-Deixe esse terminal aberto. Quando aparecer `Uvicorn running on http://127.0.0.1:8080`, confira
-em **outro terminal**:
-
-```powershell
-Invoke-RestMethod http://localhost:8080/health
-```
-
-A resposta esperada é `status: ok`. Para ver os dados reais já disponíveis:
-
-```powershell
-Invoke-RestMethod http://localhost:8080/api/v1/project/summary
-```
-
-Deve mostrar o corpus `v6` com 1.400 documentos. A documentação interativa da API fica em
-`http://localhost:8080/docs`.
-
----
-
-## Parte B: frontend
-
-### Passo 8. Clonar o frontend e instalar
-
-No **terminal 2**:
-
-```powershell
-cd $HOME
-git clone https://github.com/Etuarda/frontendRAG.git
+```bash
+git clone --branch main https://github.com/sevenRevy/frontendRAG.git
 cd frontendRAG
-npm install
+npm ci
 ```
 
-### Passo 9. Conferir o endereço do backend
+Se já clonou esta fork, não clone novamente; use sua pasta existente. Não confunda
+com o repositório original `Etuarda/frontendRAG` nem com uma branch antiga.
 
-O frontend lê o endereço da API em `VITE_API_BASE_URL`. O arquivo `.env.development`, já
-versionado, aponta para `http://localhost:8080`. **Se o backend está na porta 8080, não faça nada.**
+## 7. Diagnosticar antes de abrir a interface
 
-Se você subiu o backend em outra porta, crie `.env.development.local` (não versionado) com o
-endereço certo, por exemplo:
+```bash
+npm run check:backend
+```
+
+Verifica `/health`, o resumo do corpus e uma contratação real. Não chama o LLM.
+Na revisão de backend `876449e`, o resumo retornou **1.425 documentos e 5 bases**
+(`v6 + suplemento sintético`). Os números podem mudar com atualizações do corpus.
+
+Para verificar também embeddings, recuperação e geração:
+
+```bash
+npm run check:query
+```
+
+Envia **“O que estabelece a Lei 14.133/2021?”**, espera até 240 segundos por essa
+requisição e só passa se receber resposta não recusada, `query_id` e fontes.
+**Esta pergunta é real e fica registrada no histórico do backend.** Uma recusa
+ou falta de evidência reprova esse teste; não é substituída por resposta simulada.
+O comando não avalia a correção jurídica da resposta nem garante todas as perguntas.
+
+Para outra pergunta:
+
+```bash
+npm run check:backend -- --query "Quais contratos de ambulâncias foram publicados?"
+```
+
+Os diagnósticos HTTP não testam CORS no navegador, Histórico ou feedback.
+Confira esses fluxos também na interface.
+
+## 8. Iniciar a interface e perguntar
+
+```bash
+npm run dev
+```
+
+Abra **<http://localhost:5173>**:
+
+1. Confira **Backend online** na barra lateral.
+2. Abra **Contratações** e **Transparência da IA**: devem mostrar dados da API.
+3. Em **Consulta**, envie uma pergunta, por exemplo:
+   - O que estabelece a Lei 14.133/2021?
+   - Sou MEI, posso participar de pregão eletrônico?
+   - Quais contratos de ambulâncias foram publicados?
+4. Confira o texto e as fontes. Respostas limitadas ou recusas são possíveis;
+   o corpus não cobre todas as perguntas.
+5. Avalie a resposta. “Feedback registrado” só aparece após o sucesso na API.
+6. Abra **Histórico**, reveja a consulta e recarregue a página para conferir
+   a persistência no servidor.
+
+O campo de continuação mantém as respostas na tela, mas esta versão do frontend
+não envia o contexto anterior: as perguntas continuam independentes para o RAG.
+Não guarda consultas em `localStorage` ou `sessionStorage`.
+
+## 9. Outra URL de backend
+
+O `.env.development` versionado já aponta para a porta 8080. Para outra porta/host,
+crie **`.env.development.local`** na raiz do frontend:
 
 ```env
 VITE_API_BASE_URL=http://localhost:8000
 ```
 
-### Passo 10. Subir o frontend
+Use a URL base, sem `/api/v1/query`. Reinicie o Vite após mudar a configuração.
+Os diagnósticos leem os mesmos arquivos de desenvolvimento do Vite.
 
-Ainda no terminal 2:
+**Variáveis `VITE_*` entram no JavaScript público:** não use para senhas,
+`DATABASE_URL`, `RAG_API_KEY` nem tokens de provedores.
 
-```powershell
-npm run dev
+## 10. Nas próximas execuções
+
+Não precisa reinstalar tudo. Inicie a API com o Python da `.venv` no terminal 1;
+no terminal 2, rode `npm run check:backend` e `npm run dev`. Mantenha ambos abertos.
+
+Para verificar o frontend offline:
+
+```bash
+npm test
+npm run build
 ```
 
-Abra **http://localhost:5173**. Pela porta, o CORS do backend libera essa origem por padrão.
-
-### Passo 11. Conferir a conexão
-
-1. No rodapé da barra lateral deve aparecer **"Backend online"** (ponto verde). "Backend offline"
-   significa que o frontend não alcança a API; veja a seção de problemas abaixo.
-2. Abra **Contratações**: devem aparecer contratos reais (por exemplo, da Autarquia Municipal de
-   Água e Esgoto de Cachoeiras de Macacu).
-3. Abra **Transparência da IA**: deve mostrar o corpus `v6` e as quatro bases
-   (`contratos_estruturado`, `editais_normativo`, `atas_conversacional`, `pca_agregado`).
-
-O frontend não tem dados de exemplo: se algo aparece na tela, veio do backend.
-
----
-
-## Parte C: fazer perguntas
-
-### Passo 12. Pela interface
-
-Na tela **Consulta**, digite a pergunta e pressione Enter. Perguntas que já funcionaram com a base atual:
-
-- Quais contratos de material de limpeza foram assinados em 2025?
-- Quais órgãos contrataram serviços de informática em 2025?
-- O que estabelece a Lei 14.133/2021?
-- Sou MEI, posso participar de pregão eletrônico?
-- Quais contratos de ambulâncias foram publicados?
-
-O que esperar:
-
-- **A primeira pergunta depois de subir o backend é a mais lenta:** pode passar de 2 minutos,
-  porque o modelo de rerank é baixado e carregado. As seguintes levam por volta de 30 a 45 segundos.
-  O frontend espera até 4 minutos antes de desistir.
-- Abaixo de cada resposta aparecem o nível de evidência, as fontes e "Esta resposta foi útil?".
-  A avaliação é gravada no backend.
-- Use o campo no rodapé para continuar perguntando na mesma tela. Cada pergunta é independente para
-  o backend: ele não usa o contexto das anteriores.
-- A página **Histórico** lista as consultas gravadas pelo backend, mesmo depois de recarregar a página.
-
-### Passo 13. (Alternativa) Sem o frontend
-
-Pelo terminal do backend, com o `(.venv)` ativo:
-
-```powershell
-python app/cli.py perguntar "Quais contratos de ambulâncias foram publicados?"
-python app/cli.py rota "Sou MEI, posso participar de pregão eletrônico?"
-```
-
-`perguntar` roda o pipeline completo e imprime a resposta em JSON. `rota` mostra só quais bases o
-roteador escolheria.
-
-Ou direto na API (o `UTF8.GetBytes` evita problemas com acentos no PowerShell):
-
-```powershell
-$body = '{"query": "Quais contratos de material de limpeza foram assinados em 2025?", "top_k": 5}'
-Invoke-RestMethod -Method Post -Uri http://localhost:8080/api/v1/query `
-  -ContentType 'application/json; charset=utf-8' `
-  -Body ([Text.Encoding]::UTF8.GetBytes($body))
-```
-
----
-
-## Resumo da ordem de execução
-
-```text
-Terminal 1 (backend)                          Terminal 2 (frontend)
----------------------------------------       ---------------------------------------
-1. git clone ...rag-grande-desafio...
-2. python -m venv .venv + ativar
-3. pip install -r requirements.txt
-4. copy .env.example .env
-5. python llm_ecoa.py
-7. uvicorn app.api:app --reload `
-     --host 127.0.0.1 --port 8080   ──────►   8. git clone ...frontendRAG + npm install
-   (deixar rodando)                           10. npm run dev   (deixar rodando)
-                                              11. abrir http://localhost:5173
-                                              12. perguntar
-```
-
-Nas próximas vezes, basta: ativar o `.venv` e rodar o `uvicorn` no terminal 1, e `npm run dev` no terminal 2.
-
----
+Os testes usam respostas HTTP controladas apenas no ambiente de teste. Não chamam
+o endpoint ECOA e não colocam dados simulados no build de produção.
 
 ## Problemas comuns
 
-| Sintoma | Causa provável | Solução |
-| --- | --- | --- |
-| Sidebar mostra "Backend offline" | API não está rodando, ou está em outra porta | Confira o terminal 1 e rode `Invoke-RestMethod http://localhost:8080/health`. Se a porta for outra, ajuste o `.env.development.local` (passo 9) e reinicie o `npm run dev`. |
-| Toda pergunta mostra "Nao foi possivel processar a consulta." | Dependência faltando no Python que roda o `uvicorn` (geralmente `faiss`) | Com o `(.venv)` ativo: `pip install -r requirements.txt`, depois reinicie o `uvicorn`. Confira se o `uvicorn` foi iniciado de dentro do `.venv`. |
-| "O servidor demorou demais para responder" | Primeira pergunta (download do rerank) ou LLM da turma lento | Aguarde e pergunte de novo. Para pular o rerank, use `RERANK_ENABLED=false` no `.env` e reinicie o `uvicorn`. |
-| `python llm_ecoa.py` falha | Sem internet ou endpoint da turma fora do ar | Teste a conexão. Sem o endpoint, a API sobe e as páginas de Explorar funcionam, mas as perguntas não. |
-| Erro de CORS no console do navegador | Frontend aberto em origem não liberada (ex.: IP da rede em vez de `localhost`) | Acesse por `http://localhost:5173` ou inclua a origem em `CORS_ALLOW_ORIGINS` no `.env` do backend. |
-| `npm run dev`: "Port 5173 is already in use" | Já existe um frontend rodando | Use o que já está aberto ou encerre o outro terminal. |
-| Ativação do `.venv` bloqueada no PowerShell | Política de execução de scripts | `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` (passo 2). |
-| `FileNotFoundError: [WinError 3]` ao coletar o corpus | Caminho maior que 260 caracteres no Windows | Só afeta a coleta, não o uso local. Veja o README do backend para ativar caminhos longos. |
+| Sintoma | O que conferir |
+| --- | --- |
+| Backend offline / `fetch failed` | API iniciada? Porta 8080? `.env.development.local` correto? |
+| `/health` passa, mas catálogo falha | SQLite presente, branch `joao-reis`, `DATABASE_URL=` vazio. |
+| Toda pergunta retorna erro 500 | Dependências instaladas no mesmo Python usado pelo `uvicorn`; veja o traceback no terminal 1. |
+| `No module named faiss` | Instale `requirements.txt` na `.venv`; não use o Python global para iniciar a API. |
+| Timeout na primeira pergunta | Download do reranker ou endpoint lento; aguarde ou teste com `RERANK_ENABLED=false` e reinicie a API. |
+| Diagnóstico passa, navegador mostra CORS | Abra em `localhost:5173`; outra origem exige `CORS_ALLOW_ORIGINS` no backend e reinício. |
+| Histórico retorna 403 sobre `RAG_API_KEY` | Backend com proteção antiga ou processo sem reinício; a abertura temporária deve estar aplicada no backend. |
+| Porta 5173 ocupada | Encerre o Vite antigo; o projeto não muda silenciosamente de porta. |
+| Erro ao instalar FAISS/PyTorch | Use Python 3.12 de 64 bits; confira a mensagem de instalação e espaço em disco. |
+| Build/preview sem URL da API | Configure `.env.production.local`; `.env.development` só vale no desenvolvimento. |
 
----
+## Site publicado
 
-## Referências
+GitHub Pages serve somente arquivos estáticos. Para usar a interface publicada,
+é necessário backend **HTTPS público**, URL definida no build e origem liberada
+no CORS. `http://localhost:8080` não é uma API pública para os visitantes do site.
+Veja [FRONTEND_INTEGRATION.md](FRONTEND_INTEGRATION.md).
 
-- Contrato da API (fonte de verdade): `docs/FRONTEND_API_CONTRACT.md`, no repositório do backend.
-- Como o frontend implementa o contrato: [FRONTEND_INTEGRATION.md](FRONTEND_INTEGRATION.md).
-- Coleta do corpus, curadoria e avaliação: `README.md` e `docs/CLI.md` do backend.
+## Validação desta preparação
+
+Com os arquivos publicados do backend `joao-reis` na revisão `876449e`, configuração
+copiada de `.env.example`, SQLite/índices versionados e `RERANK_ENABLED=false`,
+foram verificados: saúde, catálogo, resumo do corpus, pergunta normativa real com
+fontes, histórico e feedback (HTTP 200). Essa validação não depende das alterações
+locais ainda não publicadas do backend; não garante disponibilidade futura do ECOA.

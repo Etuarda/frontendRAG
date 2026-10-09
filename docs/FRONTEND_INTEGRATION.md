@@ -149,15 +149,26 @@ aberta; "Nova conversa" limpa a tela.
   feedback, e permite continuar perguntando.
 - O campo "Filtrar consultas carregadas" só filtra os itens já recebidos; não chama a API.
 - Como o backend grava cada consulta isoladamente, o histórico lista consultas, não conversas.
+- **Abertura temporária da demo:** o histórico geral não exige chave e pode mostrar
+  consultas de todos os usuários. Não exponha conteúdo sensível. O filtro de sessão
+  não autentica o usuário, e os endpoints de trace continuam protegidos. Versões
+  anteriores do backend podem retornar `401`/`403`; aplique a correção e reinicie a
+  API, sem embutir `RAG_API_KEY` em variáveis `VITE_*`.
 
 ## 7. Executando frontend e backend localmente
 
+Para uma instalação após clone, siga [GUIA_EXECUCAO_LOCAL.md](GUIA_EXECUCAO_LOCAL.md):
+backend na branch `joao-reis` e esta fork (`sevenRevy/frontendRAG`) na `main`.
+Depois da instalação:
+
 ```bash
 # Terminal 1: backend (na raiz do repositório do backend)
-uvicorn app.api:app --reload --host 127.0.0.1 --port 8080
+python -m uvicorn app.api:app --reload --host 127.0.0.1 --port 8080
 
 # Terminal 2: frontend
-npm install
+npm ci
+npm run check:backend
+npm run check:query
 npm run dev
 ```
 
@@ -167,13 +178,17 @@ página mostra erro de conexão.
 
 ## 8. Backend HTTPS para o GitHub Pages
 
-O site publicado (`https://etuarda.github.io/frontendRAG/`) é servido por HTTPS. Para funcionar,
+O GitHub Pages serve só a interface, por HTTPS. Nesta fork, a origem é
+`https://sevenrevy.github.io` (o projeto, quando publicado, fica em `/frontendRAG/`).
+No repositório original, a origem é `https://etuarda.github.io`. Para funcionar,
 ele precisa de:
 
 1. **Backend acessível por HTTPS**: servidor próprio ou túnel (ex.: `cloudflared tunnel --url http://localhost:8080`
    ou `ngrok http 8080`).
-2. **CORS liberado no backend para a origem `https://etuarda.github.io`.** Hoje o contrato libera
-   apenas as origens locais; sem essa mudança no backend, o navegador bloqueia as chamadas.
+2. **CORS liberado no backend para a origem do site.** O backend permite as origens
+   locais e a origem original da Etuarda. Para esta fork, acrescente
+   `https://sevenrevy.github.io` a `CORS_ALLOW_ORIGINS` no `.env` do backend e reinicie
+   a API. Sem isso, o navegador bloqueia as chamadas.
 3. **URL no build**, por um destes caminhos:
    - **Build manual:** crie `.env.production.local` com
      `VITE_API_BASE_URL=https://URL-DO-BACKEND`, rode `npm run build:pages` e faça commit de
@@ -186,11 +201,14 @@ sem mudar código.
 
 ## 9. Testes automatizados
 
-`npm test` roda 36 testes com Vitest e Testing Library. Nos testes, o `fetch` é substituído
+`npm test` roda os testes da interface com Vitest/Testing Library e os testes dos
+scripts de diagnóstico com `node:test`. Nos testes da interface, o `fetch` é substituído
 por `src/test/http.ts`: nenhuma requisição sai da máquina e nada disso entra no build.
+Os testes dos scripts também usam respostas controladas, sem backend ou LLM.
 
 | Arquivo | O que garante |
 | --- | --- |
+| `scripts/check-backend.test.mjs` | diagnóstico de API/corpus/banco, pergunta com fontes, falhas HTTP/rede/timeout e configuração de desenvolvimento |
 | `services/api.test.ts` | URL base, parâmetros vazios omitidos, JSON no POST, falha de rede, timeout, 404/422/500/503 e URL não configurada |
 | `services/services.test.ts` | corpo exato do `/query` (`query` + `top_k`), `query_id` intacto no feedback, 404 do feedback, `limit` do histórico, filtros do Explorar, `/health` |
 | `hooks/usePaginatedList.test.ts` | paginação por `offset`, estados `empty` e `error`, recarga ao mudar filtros |
