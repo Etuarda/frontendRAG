@@ -28,6 +28,7 @@ interface RequestOptions {
   body?: unknown;
   params?: Record<string, QueryValue>;
   timeoutMs?: number;
+  headers?: Record<string, string>;
 }
 
 // Mensagens por status seguem a seção 13 do contrato.
@@ -71,7 +72,7 @@ export async function apiRequest<T>(endpoint: string, options: RequestOptions = 
     );
   }
 
-  const { method = 'GET', body, params, timeoutMs = TIMEOUT_DEFAULT_MS } = options;
+  const { method = 'GET', body, params, timeoutMs = TIMEOUT_DEFAULT_MS, headers } = options;
   const controller = new AbortController();
   const timer = window.setTimeout(() => controller.abort(), timeoutMs);
 
@@ -79,7 +80,10 @@ export async function apiRequest<T>(endpoint: string, options: RequestOptions = 
   try {
     response = await fetch(buildUrl(endpoint, params), {
       method,
-      headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
+      headers: {
+        ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
+        ...headers,
+      },
       body: body === undefined ? undefined : JSON.stringify(body),
       signal: controller.signal,
     });

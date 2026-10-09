@@ -18,10 +18,15 @@ export interface SourceRef {
 export interface RagQueryRequest {
   query: string;
   top_k?: number;
+  session_id?: string;
+  historico?: ConversationHistoryItem[];
 }
+
+export interface ConversationHistoryItem { pergunta: string; resposta?: string; }
 
 export interface RagResponse {
   query_id: string;
+  session_id: string;
   query: string;
   answer: string;
   bases_consultadas: EvidenceNature[];
@@ -29,6 +34,43 @@ export interface RagResponse {
   confidence_level: ConfidenceLevel;
   is_refusal: boolean;
   refusal_reason: string | null;
+  pergunta_reformulada: string | null;
+  avisos: string[];
+}
+
+export interface TraceSummary {
+  caminho?: string | null;
+  consultou_sql: boolean;
+  consultou_vetorial: boolean;
+  evidencias_sql?: number;
+  evidencias_vetorial?: Record<string, number>;
+  bases_roteadas?: string[];
+  fontes_citadas?: string[];
+  confidence_level?: ConfidenceLevel;
+  is_refusal?: boolean;
+  refusal_reason?: string | null;
+}
+
+export interface TraceStep {
+  ordem: number; stage: string; base: 'sql' | 'vetorial' | null; status: string;
+  ts: string; latencia_ms: number; input: unknown; output: unknown;
+  tokens: Record<string, number> | null; modelo: string | null;
+  detalhes: Record<string, unknown>;
+}
+
+export interface QueryTrace {
+  query_id: string; session_id: string | null; run_ids: string[]; pergunta: string | null;
+  inicio: string; fim: string; latencia_total_ms: number; resumo: TraceSummary; etapas: TraceStep[];
+}
+
+export interface SessionTraceQuestion {
+  ordem: number; query_id: string; pergunta: string | null; inicio: string; fim: string;
+  latencia_total_ms: number; resumo: TraceSummary; etapas: string[];
+}
+
+export interface SessionTrace {
+  session_id: string; inicio: string; fim: string; total_perguntas: number;
+  consultou_sql: number; consultou_vetorial: number; perguntas: SessionTraceQuestion[];
 }
 
 export interface FeedbackRequest {

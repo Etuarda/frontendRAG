@@ -66,3 +66,13 @@ describe('App com backend desligado', () => {
     expect(await screen.findByText('Backend offline')).toBeInTheDocument();
   });
 });
+
+describe('App público', () => {
+  it('não expõe Histórico nem chama /api/v1/history', async () => {
+    const { calls } = stubFetch(() => json(200, { status: 'ok' }));
+    render(<App />);
+    expect(screen.queryByRole('button', { name: 'Histórico' })).not.toBeInTheDocument();
+    await screen.findByText('Backend online');
+    expect(calls.some(call => call.url.pathname === '/api/v1/history')).toBe(false);
+  });
+});

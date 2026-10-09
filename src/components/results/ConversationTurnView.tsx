@@ -7,10 +7,11 @@ import { EVIDENCE_LEVEL_LABELS, NATUREZA_LABELS, refusalLabel } from '../../cons
 interface ConversationTurnViewProps {
   turn: ConversationTurn;
   onRated: (queryId: string, avaliacao: Avaliacao) => void;
+  onViewTrace: (queryId: string) => void;
 }
 
 /** Uma pergunta da conversa com a resposta, as fontes e a avaliação. */
-export function ConversationTurnView({ turn, onRated }: ConversationTurnViewProps) {
+export function ConversationTurnView({ turn, onRated, onViewTrace }: ConversationTurnViewProps) {
   const { response } = turn;
 
   // A API separa parágrafos por linha em branco; um <p> por bloco facilita a leitura.
@@ -62,7 +63,12 @@ export function ConversationTurnView({ turn, onRated }: ConversationTurnViewProp
             Base {NATUREZA_LABELS[natureza].toLowerCase()}
           </span>
         ))}
+        <button type="button" className="trace-link" onClick={() => onViewTrace(response.query_id)}>Ver caminho</button>
       </div>
+
+      {!response.is_refusal && response.bases_consultadas.length === 0 ? <p className="conversation-no-corpus">Conversa — sem consulta ao acervo</p> : null}
+      {response.pergunta_reformulada ? <p className="response-note">Entendi como: {response.pergunta_reformulada}</p> : null}
+      {response.avisos.map((aviso) => <p className="response-note" key={aviso}>{aviso}</p>)}
 
       {response.sources_used.length > 0 ? (
         <section

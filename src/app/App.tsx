@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import type { HistoryItem } from '../types/api';
 import type { AppView } from '../types/app';
 import { useRagWorkspace } from '../hooks/useRagWorkspace';
 import { useSidebar } from '../hooks/useSidebar';
@@ -9,7 +8,6 @@ import { Icon } from '../components/ui/Icon';
 import nexoLogo from '../assets/nexo.png';
 
 import { ConsultaPage } from '../pages/Consulta/ConsultaPage';
-import { HistoricoPage } from '../pages/Historico/HistoricoPage';
 import { ContratacoesPage } from '../pages/Contratacoes/ContratacoesPage';
 import { DocumentosPage } from '../pages/Documentos/DocumentosPage';
 import { OrgaosPage } from '../pages/Orgaos/OrgaosPage';
@@ -26,11 +24,6 @@ export function App() {
 
   const handleNewQuery = () => {
     workspace.startNewConversation();
-    setActiveView('consulta');
-  };
-
-  const handleOpenHistoryItem = (item: HistoryItem) => {
-    workspace.openHistoryItem(item);
     setActiveView('consulta');
   };
 
@@ -54,14 +47,7 @@ export function App() {
             onRated={workspace.markRated}
             onNewConversation={handleNewQuery}
             onNavigate={setActiveView}
-          />
-        );
-
-      case 'historico':
-        return (
-          <HistoricoPage
-            onOpenItem={handleOpenHistoryItem}
-            onNewQuery={handleNewQuery}
+            sessionId={workspace.sessionId}
           />
         );
 

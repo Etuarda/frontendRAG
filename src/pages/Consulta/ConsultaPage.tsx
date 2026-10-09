@@ -1,9 +1,11 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { AppView, Avaliacao, ConversationTurn } from '../../types/app';
 import { SearchComposer } from '../../components/search/SearchComposer';
 import { FollowUpComposer } from '../../components/search/FollowUpComposer';
 import { ConversationTurnView } from '../../components/results/ConversationTurnView';
 import { Icon } from '../../components/ui/Icon';
+import { QueryTracePanel } from '../../components/trace/QueryTracePanel';
+import { SessionTracePanel } from '../../components/trace/SessionTracePanel';
 
 interface ConsultaPageProps {
   turns: ConversationTurn[];
@@ -14,6 +16,7 @@ interface ConsultaPageProps {
   onRated: (queryId: string, avaliacao: Avaliacao) => void;
   onNewConversation: () => void;
   onNavigate: (view: AppView) => void;
+  sessionId: string | null;
 }
 
 export function ConsultaPage({
@@ -25,9 +28,12 @@ export function ConsultaPage({
   onRated,
   onNewConversation,
   onNavigate,
+  sessionId,
 }: ConsultaPageProps) {
   const latestRef = useRef<HTMLDivElement>(null);
   const hasThread = turns.length > 0 || pendingQuery !== null;
+  const [queryTraceId, setQueryTraceId] = useState<string | null>(null);
+  const [showSessionTrace, setShowSessionTrace] = useState(false);
 
   // Leva o usuário até a pergunta nova, em vez de deixá-lo no topo da conversa.
   useEffect(() => {
@@ -54,6 +60,8 @@ export function ConsultaPage({
           <span className="result-badge-label">CONVERSA</span>
           <h1 className="conversation-title">{title}</h1>
         </div>
+        <div className="conversation-header-actions">
+        {sessionId ? <button type="button" className="btn-new-search-link" onClick={() => setShowSessionTrace(true)}>Caminho da conversa</button> : null}
         <button
           type="button"
           className="btn-new-search-link"
@@ -63,6 +71,7 @@ export function ConsultaPage({
           <Icon name="plus" size={13} />
           <span>Nova conversa</span>
         </button>
+        </div>
       </header>
 
       <div className="conversation-thread" aria-live="polite">
@@ -71,7 +80,7 @@ export function ConsultaPage({
             key={turn.response.query_id}
             ref={index === turns.length - 1 && !pendingQuery ? latestRef : null}
           >
-            <ConversationTurnView turn={turn} onRated={onRated} />
+            <ConversationTurnView turn={turn} onRated={onRated} onViewTrace={setQueryTraceId} />
           </div>
         ))}
 
@@ -100,6 +109,8 @@ export function ConsultaPage({
       <div className="conversation-composer-dock">
         <FollowUpComposer loading={loading} onSubmit={onSubmitQuery} />
       </div>
+      {queryTraceId && sessionId ? <QueryTracePanel queryId={queryTraceId} sessionId={sessionId} onClose={() => setQueryTraceId(null)} /> : null}
+      {showSessionTrace && sessionId ? <SessionTracePanel sessionId={sessionId} onClose={() => setShowSessionTrace(false)} onOpenQuery={(id) => { setShowSessionTrace(false); setQueryTraceId(id); }} /> : null}
     </div>
   );
 }

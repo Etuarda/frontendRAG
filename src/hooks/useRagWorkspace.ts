@@ -1,8 +1,8 @@
 import { useCallback, useRef, useState } from 'react';
-import type { HistoryItem } from '../types/api';
 import type { Avaliacao, ConversationTurn } from '../types/app';
 import { queryRag } from '../services/query.service';
 import { errorMessage } from './useApiResource';
+import { sessionService } from '../services/session.service';
 
 /**
  * Conversa da sessão atual: turnos em memória, sem persistência no navegador.
@@ -27,7 +27,8 @@ export function useRagWorkspace() {
       setError(null);
 
       try {
-        const response = await queryRag(normalized);
+        const historico = turns.map(({ response }) => ({ pergunta: response.query, resposta: response.answer }));
+        const response = await queryRag(normalized, historico);
         if (requestId !== requestIdRef.current) return;
         setTurns((current) => [...current, { response }]);
       } catch (err) {
@@ -36,7 +37,7 @@ export function useRagWorkspace() {
         if (requestId === requestIdRef.current) setPendingQuery(null);
       }
     },
-    [loading]
+    [loading, turns]
   );
 
   /** Marca o turno como avaliado só depois que o backend confirmou o feedback. */
@@ -53,22 +54,10 @@ export function useRagWorkspace() {
     setTurns([]);
     setPendingQuery(null);
     setError(null);
+    sessionService.clearSession();
   }, []);
 
   /** Reabre uma consulta do histórico como início de conversa, para poder continuar perguntando. */
-  const openHistoryItem = useCallback((item: HistoryItem) => {
-    requestIdRef.current++;
-    const lastFeedback = item.feedback[item.feedback.length - 1];
-    setTurns([
-      {
-        response: { ...item.resposta, query_id: item.query_id },
-        feedback: lastFeedback?.avaliacao,
-      },
-    ]);
-    setPendingQuery(null);
-    setError(null);
-  }, []);
-
   return {
     turns,
     pendingQuery,
@@ -77,6 +66,6 @@ export function useRagWorkspace() {
     submitQuery,
     markRated,
     startNewConversation,
-    openHistoryItem,
+    sessionId: sessionService.getSessionId(),
   };
 }
