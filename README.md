@@ -32,6 +32,12 @@ npm run dev        # http://localhost:5173
 | `npm run build` | Checagem de tipos e build de produção em `dist/` |
 | `npm run build:pages` | Build + cópia para `assets/` e `docs/` (GitHub Pages) |
 | `npm run preview` | Serve o build de `dist/` localmente |
+| `npm run check:backend` | Verifica o `/health` do backend configurado |
+| `npm run check:query` | Executa uma pergunta real no pipeline RAG |
+
+Todas as chamadas usam `VITE_API_BASE_URL` e enviam `ngrok-skip-browser-warning: 1`.
+Para testar um túnel, defina a variável em `.env.development.local`; nenhuma URL ngrok
+fica gravada no código. O deploy em GitHub Pages injeta `vars.VITE_API_BASE_URL` no build.
 
 ## Estrutura
 

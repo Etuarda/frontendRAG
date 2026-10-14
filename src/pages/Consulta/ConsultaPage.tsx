@@ -14,7 +14,9 @@ interface ConsultaPageProps {
   loading: boolean;
   estimatedDurationMs: number;
   error: string | null;
+  errorKind: 'config' | 'network' | 'timeout' | 'http' | null;
   onSubmitQuery: (query: string) => void;
+  onRetryQuery: () => void;
   onRated: (queryId: string, avaliacao: Avaliacao) => void;
   onNewConversation: () => void;
   onNavigate: (view: AppView) => void;
@@ -27,7 +29,9 @@ export function ConsultaPage({
   loading,
   estimatedDurationMs,
   error,
+  errorKind,
   onSubmitQuery,
+  onRetryQuery,
   onRated,
   onNewConversation,
   onNavigate,
@@ -48,7 +52,7 @@ export function ConsultaPage({
     return (
       <div className="consulta-page-container">
         <SearchComposer loading={loading} onSubmit={onSubmitQuery} onNavigate={onNavigate} />
-        {error ? <QueryError message={error} /> : null}
+        {error ? <QueryError message={error} kind={errorKind} onRetry={onRetryQuery} /> : null}
       </div>
     );
   }
@@ -85,7 +89,7 @@ export function ConsultaPage({
             key={turn.response.query_id}
             ref={index === turns.length - 1 && !pendingQuery ? latestRef : null}
           >
-            <ConversationTurnView turn={turn} onRated={onRated} onViewTrace={setTraceQueryId} />
+            <ConversationTurnView turn={turn} sessionId={sessionId ?? undefined} onRated={onRated} onViewTrace={setTraceQueryId} />
           </div>
         ))}
 
@@ -98,7 +102,7 @@ export function ConsultaPage({
           </div>
         ) : null}
 
-        {error && !loading ? <QueryError message={error} /> : null}
+        {error && !loading ? <QueryError message={error} kind={errorKind} onRetry={onRetryQuery} /> : null}
       </div>
 
       <div className="conversation-composer-dock">
@@ -111,13 +115,14 @@ export function ConsultaPage({
   );
 }
 
-function QueryError({ message }: { message: string }) {
+function QueryError({ message, kind, onRetry }: { message: string; kind: string | null; onRetry: () => void }) {
   return (
     <div className="error-notice-card" role="alert">
       <Icon name="info" size={18} />
       <div className="error-copy">
-        <strong>Não foi possível concluir a consulta</strong>
-        <p>{message}</p>
+        <strong>{kind === 'timeout' ? 'A consulta demorou mais que o esperado.' : 'Não foi possível concluir a consulta'}</strong>
+        {kind !== 'timeout' ? <p>{message}</p> : null}
+        <button type="button" className="btn-state-retry" onClick={onRetry}>Tentar novamente</button>
       </div>
     </div>
   );

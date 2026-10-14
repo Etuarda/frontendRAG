@@ -32,6 +32,15 @@ describe('ContratacoesPage', () => {
     expect(within(card).getAllByText('Não informado')).toHaveLength(3);
   });
 
+  it('consulta o NEXO pelo número de controle PNCP real', async () => {
+    const onSearchQuery = vi.fn();
+    stubFetch(() => json(200, [{ ...CONTRATO, numero_contrato: 'Contrato 16/2025' }]));
+    render(<ContratacoesPage onSearchQuery={onSearchQuery} />);
+    await userEvent.click(await screen.findByRole('button', { name: /Consultar no NEXO/ }));
+    expect(onSearchQuery).toHaveBeenCalledWith(expect.stringContaining(`PNCP ${CONTRATO.id}`));
+    expect(onSearchQuery).not.toHaveBeenCalledWith(expect.stringContaining('Contrato 16/2025'));
+  });
+
   it('erro da API mostra mensagem e "Tentar novamente"', async () => {
     let attempt = 0;
     stubFetch(() => (++attempt === 1 ? json(503, {}) : json(200, [CONTRATO])));

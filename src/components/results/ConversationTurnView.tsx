@@ -6,12 +6,13 @@ import { EVIDENCE_LEVEL_LABELS, NATUREZA_LABELS, refusalLabel } from '../../cons
 
 interface ConversationTurnViewProps {
   turn: ConversationTurn;
+  sessionId?: string;
   onRated: (queryId: string, avaliacao: Avaliacao) => void;
   onViewTrace: (queryId: string) => void;
 }
 
 /** Uma pergunta da conversa com a resposta, as fontes e a avaliação. */
-export function ConversationTurnView({ turn, onRated, onViewTrace }: ConversationTurnViewProps) {
+export function ConversationTurnView({ turn, sessionId, onRated, onViewTrace }: ConversationTurnViewProps) {
   const { response } = turn;
   const isConversation = !response.is_refusal && response.bases_consultadas.length === 0
     && response.sources_used.length === 0;
@@ -112,6 +113,7 @@ export function ConversationTurnView({ turn, onRated, onViewTrace }: Conversatio
 
       <AnswerFeedback
         queryId={response.query_id}
+        sessionId={sessionId}
         value={turn.feedback}
         onRated={(avaliacao) => onRated(response.query_id, avaliacao)}
       />

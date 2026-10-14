@@ -9,6 +9,7 @@ const MAX_COMMENT = 2000;
 
 interface AnswerFeedbackProps {
   queryId: string;
+  sessionId?: string;
   /** Avaliação já registrada no backend (ex.: consulta reaberta do histórico). */
   value?: Avaliacao;
   onRated: (avaliacao: Avaliacao) => void;
@@ -17,7 +18,7 @@ interface AnswerFeedbackProps {
 type Step = 'ask' | 'comment' | 'sending' | 'done' | 'error';
 
 /** Pergunta se a resposta foi útil e só confirma depois que o backend aceitar. */
-export function AnswerFeedback({ queryId, value, onRated }: AnswerFeedbackProps) {
+export function AnswerFeedback({ queryId, sessionId, value, onRated }: AnswerFeedbackProps) {
   const [step, setStep] = useState<Step>(value ? 'done' : 'ask');
   const [avaliacao, setAvaliacao] = useState<Avaliacao | null>(value ?? null);
   const [comentario, setComentario] = useState('');
@@ -28,7 +29,7 @@ export function AnswerFeedback({ queryId, value, onRated }: AnswerFeedbackProps)
     setStep('sending');
     setError(null);
     try {
-      await sendFeedback({ query_id: queryId, avaliacao: choice, comentario: comment });
+      await sendFeedback({ query_id: queryId, avaliacao: choice, comentario: comment }, sessionId);
       setStep('done');
       onRated(choice);
     } catch (err) {

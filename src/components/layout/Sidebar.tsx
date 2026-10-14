@@ -32,6 +32,7 @@ const NAV_SECTIONS: NavSection[] = [
   {
     items: [
       { id: 'consulta', label: 'Consulta', icon: 'search' },
+      { id: 'historico', label: 'Histórico', icon: 'clock' },
     ],
   },
   {

@@ -15,6 +15,7 @@ import { FontesPage } from '../pages/Fontes/FontesPage';
 import { TransparenciaPage } from '../pages/Transparencia/TransparenciaPage';
 import { SobrePage } from '../pages/Sobre/SobrePage';
 import { ComoFuncionaPage } from '../pages/Sobre/ComoFuncionaPage';
+import { HistoricoPage } from '../pages/Historico/HistoricoPage';
 
 export function App() {
   const [activeView, setActiveView] = useState<AppView>('consulta');
@@ -45,7 +46,9 @@ export function App() {
             loading={workspace.loading}
             estimatedDurationMs={workspace.estimatedDurationMs}
             error={workspace.error}
+            errorKind={workspace.errorKind}
             onSubmitQuery={workspace.submitQuery}
+            onRetryQuery={workspace.retryQuery}
             onRated={workspace.markRated}
             onNewConversation={handleNewQuery}
             onNavigate={setActiveView}
@@ -63,6 +66,9 @@ export function App() {
 
       case 'fontes':
         return <FontesPage />;
+
+      case 'historico':
+        return <HistoricoPage sessionId={workspace.sessionId} onNewQuery={handleNewQuery} />;
 
       case 'como-funciona':
         return <ComoFuncionaPage onNavigate={setActiveView} />;

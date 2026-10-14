@@ -40,6 +40,8 @@ export function useRagWorkspace() {
   const [sessionId, setSessionIdState] = useState<string | null>(initialSession.current);
   const [pendingQuery, setPendingQuery] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [errorKind, setErrorKind] = useState<ApiError['kind'] | null>(null);
+  const failedQueryRef = useRef<string | null>(null);
   const [estimatedDurationMs, setEstimatedDurationMs] = useState(82_000);
   const queryStartedAtRef = useRef<number | null>(null);
   const requestIdRef = useRef(0);
@@ -67,6 +69,8 @@ export function useRagWorkspace() {
       queryStartedAtRef.current = Date.now();
       setPendingQuery(normalized);
       setError(null);
+      setErrorKind(null);
+      failedQueryRef.current = null;
 
       const context = () => ({
         sessionId: sessionIdRef.current,
@@ -92,13 +96,22 @@ export function useRagWorkspace() {
         setEstimatedDurationMs((current) => Math.max(5_000, Math.round(current * 0.4 + duration * 0.6)));
         setTurns((current) => [...current, { response }]);
       } catch (err) {
-        if (requestId === requestIdRef.current) setError(errorMessage(err));
+        if (requestId === requestIdRef.current) {
+          setError(errorMessage(err));
+          setErrorKind(err instanceof ApiError ? err.kind : 'network');
+          failedQueryRef.current = normalized;
+        }
       } finally {
         if (requestId === requestIdRef.current) setPendingQuery(null);
       }
     },
     [pendingQuery, setSessionId, setTurns]
   );
+
+  const retryQuery = useCallback(() => {
+    const query = failedQueryRef.current;
+    if (query) void submitQuery(query);
+  }, [submitQuery]);
 
   const markRated = useCallback((queryId: string, avaliacao: Avaliacao) => {
     setTurns((current) =>
@@ -114,6 +127,8 @@ export function useRagWorkspace() {
     setSessionId(null);
     setPendingQuery(null);
     setError(null);
+    setErrorKind(null);
+    failedQueryRef.current = null;
   }, [setSessionId, setTurns]);
 
   return {
@@ -123,7 +138,9 @@ export function useRagWorkspace() {
     loading,
     estimatedDurationMs,
     error,
+    errorKind,
     submitQuery,
+    retryQuery,
     markRated,
     startNewConversation,
   };

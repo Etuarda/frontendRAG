@@ -66,9 +66,15 @@ de documentos oferece somente os tipos do contrato: `Normativo`, `Contrato`,
 `Ata de Registro`, `PCA` e `Conversa sintética`. Conteúdo sintético é identificado
 como tal na resposta e as conversas restritas não são expostas no catálogo.
 
-## Histórico geral
+## Histórico da sessão
 
-`GET /api/v1/history` não faz parte do site público e não há página de Histórico. A rota permanece protegida no backend para operação da demo.
+A página pública de Histórico chama `GET /api/v1/history` somente quando existe uma
+sessão ativa e envia `X-Session-Id`. Assim, o usuário vê apenas as consultas da própria
+conversa. O frontend não envia nem embute `X-API-Key`; o histórico administrativo/global
+continua restrito ao backend.
+
+O cliente HTTP também envia `ngrok-skip-browser-warning: 1` de forma centralizada em
+todas as rotas. A URL vem exclusivamente de `VITE_API_BASE_URL`.
 
 ## Execução local
 
@@ -82,6 +88,13 @@ npm run dev
 ```
 
 Abra `http://localhost:5173`.
+
+Diagnóstico sem navegador:
+
+```powershell
+npm run check:backend
+npm run check:query
+```
 
 ## Testes
 

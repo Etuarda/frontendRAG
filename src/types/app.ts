@@ -7,6 +7,7 @@ export type AppView =
   | 'documentos'
   | 'orgaos'
   | 'fontes'
+  | 'historico'
   | 'como-funciona'
   | 'transparencia'
   | 'sobre';

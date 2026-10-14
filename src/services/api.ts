@@ -78,7 +78,12 @@ export async function apiRequest<T>(endpoint: string, options: RequestOptions = 
 
   let response: Response;
   try {
-    const headers: Record<string, string> = { ...options.headers };
+    // Evita a pagina intermediaria do ngrok em todas as rotas (health, catalogos,
+    // consulta, historico, feedback e trace). Headers especificos sao preservados.
+    const headers: Record<string, string> = {
+      'ngrok-skip-browser-warning': '1',
+      ...options.headers,
+    };
     if (body !== undefined) headers['Content-Type'] = 'application/json';
 
     response = await fetch(buildUrl(endpoint, params), {

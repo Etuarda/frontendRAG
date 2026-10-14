@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { queryRag } from './query.service';
 import { sendFeedback } from './feedback.service';
+import { getSessionHistory } from './history.service';
 import { getQuestionTrace, getSessionTrace } from './trace.service';
 import { listContracts } from './contracts.service';
 import { listDocuments } from './documents.service';
@@ -66,6 +67,16 @@ describe('feedback.service', () => {
   it('propaga falha de rede', async () => {
     stubNetworkDown();
     await expect(sendFeedback({ query_id: 'q_x', avaliacao: 'positivo' })).rejects.toThrow(/conectar/);
+  });
+});
+
+describe('history.service', () => {
+  it('consulta somente a sessão informada por X-Session-Id', async () => {
+    const { calls } = stubFetch(() => json(200, []));
+    await getSessionHistory('s_1234567890123456');
+    expect(calls[0].url.pathname).toBe('/api/v1/history');
+    expect(calls[0].headers.get('X-Session-Id')).toBe('s_1234567890123456');
+    expect(calls[0].headers.get('X-API-Key')).toBeNull();
   });
 });
 

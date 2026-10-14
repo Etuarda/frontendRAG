@@ -10,6 +10,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
+    "check:backend": "node scripts/check-backend.mjs",
+    "check:query": "node scripts/check-backend.mjs --query",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist"
   },

@@ -24,8 +24,8 @@ export function ContratacoesPage({ onSearchQuery }: ContratacoesPageProps) {
   const list = usePaginatedList(listContracts, filters);
 
   const handleConsultar = (contrato: ContratacaoRecord) => {
-    const doOrgao = contrato.orgao ? ` celebrado por ${contrato.orgao}` : '';
-    onSearchQuery(`Quais são os detalhes do contrato ${contrato.numero_contrato}${doOrgao}?`);
+    const doOrgao = contrato.orgao ? ` do órgão ${contrato.orgao}` : '';
+    onSearchQuery(`Quais são os detalhes do contrato PNCP ${contrato.id}${doOrgao}?`);
   };
 
   return (
