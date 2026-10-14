@@ -8,12 +8,13 @@ describe('AnswerFeedback', () => {
   it('"Sim" envia positivo e só confirma após o 200', async () => {
     const { calls } = stubFetch(() => json(200, { status: 'recebido' }));
     const onRated = vi.fn();
-    render(<AnswerFeedback queryId="q_a1b2c3d4" onRated={onRated} />);
+    render(<AnswerFeedback queryId="q_a1b2c3d4" sessionId="s_1234567890123456" onRated={onRated} />);
 
     await userEvent.click(screen.getByRole('button', { name: /Sim/ }));
 
     expect(await screen.findByText(/Feedback registrado/)).toBeInTheDocument();
     expect(calls[0].body).toEqual({ query_id: 'q_a1b2c3d4', avaliacao: 'positivo', comentario: null });
+    expect(calls[0].headers.get('X-Session-Id')).toBe('s_1234567890123456');
     expect(onRated).toHaveBeenCalledWith('positivo');
   });
 

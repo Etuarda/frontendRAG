@@ -5,6 +5,8 @@ import { getSessionHistory } from './history.service';
 import { getQuestionTrace, getSessionTrace } from './trace.service';
 import { listContracts } from './contracts.service';
 import { listDocuments } from './documents.service';
+import { listOrganizations } from './organizations.service';
+import { listSources } from './sources.service';
 import { checkHealth } from './health.service';
 import { failureOf, json, stubFetch, stubNetworkDown } from '../test/http';
 
@@ -127,6 +129,21 @@ describe('explore services', () => {
 
     expect(calls[0].url.searchParams.has('tipo')).toBe(false);
     expect(calls[0].url.searchParams.has('busca')).toBe(false);
+  });
+
+  it('órgãos: envia busca e paginação', async () => {
+    const { calls } = stubFetch(() => json(200, []));
+    await listOrganizations({ busca: 'Defensoria' }, { limit: 24, offset: 0 });
+    expect(calls[0].url.pathname).toBe('/api/v1/explore/orgaos');
+    expect(Object.fromEntries(calls[0].url.searchParams)).toEqual({
+      busca: 'Defensoria', limit: '24', offset: '0',
+    });
+  });
+
+  it('fontes oficiais: usa o endpoint público do manifesto', async () => {
+    const { calls } = stubFetch(() => json(200, []));
+    await listSources();
+    expect(calls[0].url.pathname).toBe('/api/v1/explore/fontes');
   });
 });
 

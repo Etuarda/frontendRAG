@@ -8,6 +8,15 @@ O contrato oficial está em `docs/FRONTEND_API_CONTRACT.md` no repositório do b
 
 O site público nunca usa `RAG_API_KEY` ou `X-API-Key`. Essa credencial pertence apenas a quem opera o backend. O acesso ao caminho de uma conversa usa o `session_id` devolvido pela própria API.
 
+### Limitação do backend local
+
+Quando o backend existe somente em `localhost`, o GitHub Pages publica a interface,
+mas não consegue oferecer a integração RAG para outros dispositivos: `localhost`
+sempre aponta para a máquina de quem abriu o navegador. Nesse cenário, a validação
+integrada deve ser feita com `npm run dev` na mesma máquina do backend. Para uma demo
+pública, ainda é necessário expor o backend por HTTPS e configurar
+`VITE_API_BASE_URL` antes do build.
+
 ## Cliente e serviços
 
 ```text

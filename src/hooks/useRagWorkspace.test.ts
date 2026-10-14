@@ -32,9 +32,21 @@ describe('useRagWorkspace', () => {
       historico: [{ pergunta: 'Primeira pergunta', resposta: 'Resposta para Primeira pergunta' }],
     });
 
+    await act(() => result.current.submitQuery('E por fim?'));
+    expect(calls[2].body).toMatchObject({
+      session_id: 's_1234567890123456',
+      historico: [
+        { pergunta: 'Primeira pergunta', resposta: 'Resposta para Primeira pergunta' },
+        { pergunta: 'E depois?', resposta: 'Resposta para E depois?' },
+      ],
+    });
+
     act(() => result.current.startNewConversation());
     expect(window.sessionStorage.getItem('nexo:conversation-session-id')).toBeNull();
     expect(result.current.turns).toHaveLength(0);
+
+    await act(() => result.current.submitQuery('Pergunta da nova conversa'));
+    expect(calls[3].body).toEqual({ query: 'Pergunta da nova conversa', top_k: 5 });
   });
 
   it('ao receber 422 por sessão restaurada, limpa o id e tenta uma vez sem ele', async () => {
