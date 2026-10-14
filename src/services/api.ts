@@ -28,10 +28,13 @@ interface RequestOptions {
   body?: unknown;
   params?: Record<string, QueryValue>;
   timeoutMs?: number;
+  /** Sessão da conversa: vira o header `X-Session-Id` (persona "novo usuário"). */
+  sessionId?: string;
 }
 
 // Mensagens por status seguem a seção 13 do contrato.
 const STATUS_MESSAGES: Record<number, string> = {
+  401: 'Não identificado. Reabra o chat para retomar a sua sessão.',
   404: 'Recurso não encontrado.',
   422: 'Os dados enviados são inválidos.',
   500: 'O servidor não conseguiu concluir a solicitação. Tente novamente.',
@@ -71,15 +74,19 @@ export async function apiRequest<T>(endpoint: string, options: RequestOptions = 
     );
   }
 
-  const { method = 'GET', body, params, timeoutMs = TIMEOUT_DEFAULT_MS } = options;
+  const { method = 'GET', body, params, timeoutMs = TIMEOUT_DEFAULT_MS, sessionId } = options;
   const controller = new AbortController();
   const timer = window.setTimeout(() => controller.abort(), timeoutMs);
+
+  const headers: Record<string, string> = {};
+  if (body !== undefined) headers['Content-Type'] = 'application/json';
+  if (sessionId) headers['X-Session-Id'] = sessionId;
 
   let response: Response;
   try {
     response = await fetch(buildUrl(endpoint, params), {
       method,
-      headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
+      headers: Object.keys(headers).length > 0 ? headers : undefined,
       body: body === undefined ? undefined : JSON.stringify(body),
       signal: controller.signal,
     });

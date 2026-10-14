@@ -63,6 +63,16 @@ describe('history.service', () => {
 
     expect(calls[0].url.pathname).toBe('/api/v1/history');
     expect(calls[0].url.searchParams.get('limit')).toBe('100');
+    // Sem sessão e sem chave: o backend responde 401 (dois personas).
+    expect(calls[0].headers['x-session-id']).toBeUndefined();
+  });
+
+  it('envia o X-Session-Id da conversa (persona novo usuário)', async () => {
+    const { calls } = stubFetch(() => json(200, []));
+    await getHistory(20, 'sessao_do_usuario_a_001');
+
+    expect(calls[0].headers['x-session-id']).toBe('sessao_do_usuario_a_001');
+    expect(calls[0].url.searchParams.get('limit')).toBe('20');
   });
 });
 

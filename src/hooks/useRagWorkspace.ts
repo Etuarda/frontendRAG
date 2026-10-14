@@ -2,6 +2,7 @@ import { useCallback, useRef, useState } from 'react';
 import type { HistoryItem } from '../types/api';
 import type { Avaliacao, ConversationTurn } from '../types/app';
 import { queryRag } from '../services/query.service';
+import { clearSessionId, setSessionId } from '../services/session';
 import { errorMessage } from './useApiResource';
 
 /**
@@ -40,6 +41,7 @@ export function useRagWorkspace() {
         });
         if (requestId !== requestIdRef.current) return;
         sessionIdRef.current = response.session_id;
+        setSessionId(response.session_id);
         setTurns((current) => [...current, { response }]);
       } catch (err) {
         if (requestId === requestIdRef.current) setError(errorMessage(err));
@@ -62,6 +64,7 @@ export function useRagWorkspace() {
   const startNewConversation = useCallback(() => {
     requestIdRef.current++;
     sessionIdRef.current = null;
+    clearSessionId();
     setTurns([]);
     setPendingQuery(null);
     setError(null);
