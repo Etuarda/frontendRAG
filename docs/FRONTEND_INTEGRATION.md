@@ -6,6 +6,11 @@ O contrato oficial está em `docs/FRONTEND_API_CONTRACT.md` no repositório do b
 
 `VITE_API_BASE_URL` define o backend. Em desenvolvimento, `.env.development` aponta para `http://localhost:8080`.
 
+Na publicação, o workflow usa a URL pública de demo `https://earlobe-lagged-outscore.ngrok-free.dev`
+como padrão; `vars.VITE_API_BASE_URL` pode substituí-la. O Pages precisa usar **GitHub Actions**
+como origem, não a raiz de uma branch. Configuração, validações e publicação:
+[DEPLOY_GITHUB_PAGES.md](DEPLOY_GITHUB_PAGES.md).
+
 O site público nunca usa `RAG_API_KEY` ou `X-API-Key`. Essa credencial pertence apenas a quem opera o backend. O acesso ao caminho de uma conversa usa o `session_id` devolvido pela própria API.
 
 ### Limitação do backend local
