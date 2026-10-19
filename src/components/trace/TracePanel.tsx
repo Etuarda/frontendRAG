@@ -12,7 +12,7 @@ import { EvidenceTable as DetailedEvidenceTable, ranksBefore } from './EvidenceT
 import { FiltersBlock } from './FiltersBlock';
 import { ModelUsage } from './ModelUsage';
 import { StageNotes } from './StageNotes';
-import { STATUS_LABELS } from './traceLabels';
+import { formatMs, STAGE_LABELS, STATUS_LABELS } from './traceLabels';
 
 interface TracePanelProps {
   sessionId: string;
@@ -21,27 +21,6 @@ interface TracePanelProps {
 }
 
 type PanelSelection = { kind: 'session' } | { kind: 'question'; queryId: string };
-
-const STAGE_LABELS: Record<string, string> = {
-  reformulacao: 'Entendimento do contexto',
-  query_analysis: 'Análise da pergunta',
-  roteamento: 'Escolha das bases',
-  retrieval_denso: 'Busca por significado',
-  retrieval_bm25: 'Busca por palavras',
-  fusao_rrf: 'Combinação dos resultados',
-  rerank: 'Ordenação das evidências',
-  consulta_sql: 'Consulta à base estruturada',
-  geracao: 'Geração da resposta',
-  validacao: 'Validação das fontes',
-  resumo_consulta: 'Resumo do caminho',
-  feedback: 'Feedback da resposta',
-};
-
-function formatMs(ms: number): string {
-  if (ms < 1000) return `${ms} ms`;
-  const seconds = ms / 1000;
-  return seconds < 60 ? `${seconds.toFixed(seconds < 10 ? 1 : 0)} s` : `${Math.floor(seconds / 60)} min ${Math.round(seconds % 60)} s`;
-}
 
 function countVectorEvidence(value: TraceSummary['evidencias_vetorial']): number {
   if (typeof value === 'number') return value;
@@ -65,66 +44,30 @@ function SummaryBadges({ summary, totalMs }: { summary: TraceSummary; totalMs: n
   );
 }
 
-function asRecords(value: unknown): Array<Record<string, unknown>> {
-  return Array.isArray(value) ? value.filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === 'object') : [];
-}
-
-function evidenceId(item: Record<string, unknown>): string {
-  return String(item.chunk_id ?? item.evidence_id ?? item.id ?? 'Evidência');
-}
-
-function scoreOf(item: Record<string, unknown>): string {
-  const score = item.rerank_score ?? item.score ?? item.rrf_score ?? item.dense_score ?? item.sparse_score;
-  return typeof score === 'number' ? score.toFixed(4) : '—';
-}
-
-function EvidenceTable({ items, previousRanks }: { items: Array<Record<string, unknown>>; previousRanks: Map<string, number> }) {
-  if (items.length === 0) return null;
-  return (
-    <div className="trace-table-wrap">
-      <table className="trace-evidence-table">
-        <thead><tr><th>Posição</th><th>Trecho</th><th>Score</th><th>Movimento</th></tr></thead>
-        <tbody>
-          {items.map((item, index) => {
-            const id = evidenceId(item);
-            const rank = Number(item.rank ?? index + 1);
-            const before = previousRanks.get(id);
-            const movement = before ? before - rank : 0;
-            return (
-              <tr key={`${id}-${index}`}>
-                <td>{rank}</td><td title={id}>{id}</td><td>{scoreOf(item)}</td>
-                <td>{before === undefined ? '—' : movement > 0 ? `↑ ${movement}` : movement < 0 ? `↓ ${Math.abs(movement)}` : '—'}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
 function JsonBlock({ value }: { value: unknown }) {
   if (value === null || value === undefined) return null;
   return <pre className="trace-code-block">{typeof value === 'string' ? value : JSON.stringify(value, null, 2)}</pre>;
 }
 
 function StageCard({ stage, previousRanks }: { stage: TraceStage; previousRanks: Map<string, number> }) {
-  const evidence = asRecords(stage.detalhes.evidencias);
   const sql = stage.detalhes.sql;
   const rows = stage.detalhes.linhas ?? stage.detalhes.resultado;
   const nestedResponse = stage.detalhes.resposta && typeof stage.detalhes.resposta === 'object'
     ? stage.detalhes.resposta as Record<string, unknown>
     : null;
   const prompt = stage.detalhes.prompt ?? nestedResponse?.prompt;
+  const status = String(stage.detalhes.outcome ?? stage.status);
+  const normalizedStatus = ['erro', 'erro_llm', 'saida_invalida'].includes(status) ? 'erro' : STATUS_LABELS[status] ? status : 'erro';
+  const envelope = ['interacao', 'requisicao_inicio', 'pipeline_inicio', 'pipeline_fim', 'persistencia_historico', 'requisicao_fim'].includes(stage.stage);
   return (
-    <li className="trace-stage-card">
+    <li className={`trace-stage-card${envelope ? ' trace-stage-envelope' : ''}`}>
       <div className="trace-stage-marker" aria-hidden="true" />
       <div className="trace-stage-content">
         <div className="trace-stage-heading">
           <div><strong>{STAGE_LABELS[stage.stage] ?? stage.stage.replaceAll('_', ' ')}</strong>{stage.base ? <span className={`trace-base-badge trace-base-${stage.base}`}>{stage.base === 'sql' ? 'SQL' : 'Vetorial'}</span> : null}</div>
           <span>{formatMs(stage.latencia_ms)}</span>
         </div>
-        <span className={`trace-status trace-status-${stage.status === 'ok' ? 'ok' : 'warning'}`}>{STATUS_LABELS[stage.status] ?? stage.status}</span>
+        <span className={`trace-status trace-status-${normalizedStatus}`}>{STATUS_LABELS[status] ?? status}</span>
         {stage.detalhes.tentativa_busca === 2 && ['retrieval_denso', 'retrieval_bm25', 'fusao_rrf', 'rerank'].includes(stage.stage) ? <span className="trace-attempt">2ª tentativa · sem filtros</span> : null}
         <details className="trace-stage-details">
           <summary>Ver detalhes</summary>

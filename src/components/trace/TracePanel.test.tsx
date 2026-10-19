@@ -47,4 +47,31 @@ describe('TracePanel', () => {
     render(<TracePanel sessionId="s_1234567890123456" queryId="q_1" onClose={vi.fn()} />);
     expect(await screen.findByText('2ª tentativa · sem filtros')).toBeInTheDocument();
   });
+
+  it('normaliza outcome e mostra plano B de etapa degradada', async () => {
+    stubFetch(() => json(200, { ...TRACE, etapas: [{ ...TRACE.etapas[0], status: 'ok', detalhes: { outcome: 'degradado', fallback: 'busca sem filtros' } }] }));
+    render(<TracePanel sessionId="s_1234567890123456" queryId="q_1" onClose={vi.fn()} />);
+    expect(await screen.findByText('com contorno')).toHaveClass('trace-status-degradado');
+    await userEvent.click(screen.getByText('Ver detalhes'));
+    expect(screen.getByText(/Plano B/).parentElement).toHaveTextContent('busca sem filtros');
+  });
+
+  it('mostra status pulado e seu motivo', async () => {
+    stubFetch(() => json(200, { ...TRACE, etapas: [{ ...TRACE.etapas[0], status: 'pulado', detalhes: { motivo: 'calculo_sql_suficiente' } }] }));
+    render(<TracePanel sessionId="s_1234567890123456" queryId="q_1" onClose={vi.fn()} />);
+    expect(await screen.findByText('não executada')).toHaveClass('trace-status-pulado');
+    await userEvent.click(screen.getByText('Ver detalhes'));
+    expect(screen.getByText(/cálculo SQL respondeu sozinho/)).toBeInTheDocument();
+  });
+
+  it('usa nomes amigáveis nas etapas de envelope', async () => {
+    const names = ['requisicao_inicio', 'pipeline_inicio', 'pipeline_fim', 'persistencia_historico', 'requisicao_fim'];
+    stubFetch(() => json(200, { ...TRACE, etapas: names.map((stage, ordem) => ({ ...TRACE.etapas[0], ordem, stage, detalhes: {} })) }));
+    render(<TracePanel sessionId="s_1234567890123456" queryId="q_1" onClose={vi.fn()} />);
+    expect(await screen.findByText('Pergunta recebida')).toBeInTheDocument();
+    expect(screen.getByText('Início do processamento')).toBeInTheDocument();
+    expect(screen.getByText('Fim do processamento')).toBeInTheDocument();
+    expect(screen.getByText('Gravação no histórico')).toBeInTheDocument();
+    expect(screen.getByText('Resposta enviada')).toBeInTheDocument();
+  });
 });
