@@ -34,10 +34,25 @@ npm run dev        # http://localhost:5173
 | `npm run preview` | Serve o build de `dist/` localmente |
 | `npm run check:backend` | Verifica o `/health` do backend configurado |
 | `npm run check:query` | Executa uma pergunta real no pipeline RAG |
+| `npm run check:pages` | Valida a URL HTTPS do backend antes da publicação |
+| `npm run check:pages-build` | Confere o index e a URL incorporada ao bundle em `dist/` |
 
 Todas as chamadas usam `VITE_API_BASE_URL` e enviam `ngrok-skip-browser-warning: 1`.
-Para testar um túnel, defina a variável em `.env.development.local`; nenhuma URL ngrok
-fica gravada no código. O deploy em GitHub Pages injeta `vars.VITE_API_BASE_URL` no build.
+Para testar outro backend localmente, defina a variável em `.env.development.local`.
+
+## Publicação no GitHub Pages
+
+O workflow já incorpora `https://earlobe-lagged-outscore.ngrok-free.dev` como backend
+padrão da demo. Opcionalmente, `vars.VITE_API_BASE_URL` substitui esse endereço: cadastre
+em **Settings → Secrets and variables → Actions → Variables**, não em Secrets.
+
+**Quem administra o repositório precisa selecionar Settings → Pages → Source → GitHub
+Actions.** Não use publicação pela raiz da `main`: ela serve os bundles legados em vez
+do `dist/` gerado pelo workflow. Após integrar a correção e alterar essa configuração,
+execute **Actions → Deploy to GitHub Pages → Run workflow** na `main`.
+
+O workflow bloqueia publicação com configuração inválida e verifica a URL no artefato.
+Passo a passo e diagnóstico: [docs/DEPLOY_GITHUB_PAGES.md](docs/DEPLOY_GITHUB_PAGES.md).
 
 ## Estrutura
 
