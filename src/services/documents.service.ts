@@ -1,4 +1,4 @@
-import { apiRequest } from './api';
+import { TIMEOUT_CATALOG_MS, apiRequest } from './api';
 import type { DocumentoRecord } from '../types/api';
 
 export interface DocumentFilters {
@@ -15,6 +15,6 @@ export function listDocuments(
   page: { limit: number; offset: number }
 ): Promise<DocumentoRecord[]> {
   return apiRequest<DocumentoRecord[]>('/api/v1/explore/documentos', {
-    params: { ...filters, ...page },
+    params: { ...filters, ...page }, timeoutMs: TIMEOUT_CATALOG_MS,
   });
 }

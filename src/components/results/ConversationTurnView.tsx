@@ -2,6 +2,7 @@ import type { ConversationTurn } from '../../types/app';
 import type { Avaliacao } from '../../types/app';
 import { Icon } from '../ui/Icon';
 import { AnswerFeedback } from '../feedback/AnswerFeedback';
+import { AnswerMarkdown } from './AnswerMarkdown';
 import { EVIDENCE_LEVEL_LABELS, NATUREZA_LABELS, refusalLabel } from '../../constants/labels';
 
 interface ConversationTurnViewProps {
@@ -56,9 +57,7 @@ export function ConversationTurnView({ turn, onRated }: ConversationTurnViewProp
             {isConversation ? 'Conversa' : 'Resposta fundamentada'}
           </h2>
           <div className="result-answer-prose">
-            {paragraphs.map((para, index) => (
-              <p key={index}>{para}</p>
-            ))}
+            <AnswerMarkdown answer={response.answer} />
           </div>
         </section>
       )}

@@ -746,6 +746,55 @@ a {
   margin-bottom: 0;
 }
 
+/* GFM tables stay inside the answer on narrow screens, with keyboard scrolling. */
+.markdown-table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  margin-block: 1.25rem;
+  overscroll-behavior-inline: contain;
+}
+
+.markdown-table-scroll:focus-visible {
+  outline: 2px solid var(--text-primary);
+  outline-offset: 3px;
+}
+
+.markdown-result-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.markdown-result-table th,
+.markdown-result-table td {
+  min-width: 7rem;
+  max-width: 24rem;
+  padding: 0.75rem;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--border-subtle);
+  overflow-wrap: anywhere;
+}
+
+.markdown-result-table th {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.markdown-result-table .is-numeric {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.result-answer-prose ul,
+.result-answer-prose ol {
+  padding-inline-start: 1.5rem;
+  margin-block: 1rem;
+}
+
 /* Caso de Recusa Humanizada */
 .refusal-box {
   background-color: var(--bg-card);
