@@ -2,9 +2,13 @@ import { ApiError, apiRequest } from './api';
 import type { FeedbackRequest } from '../types/api';
 
 /** Registra a avaliação de uma resposta (POST /api/v1/feedback). Falhas chegam à tela como erro. */
-export async function sendFeedback(payload: FeedbackRequest): Promise<void> {
+export async function sendFeedback(payload: FeedbackRequest, sessionId?: string): Promise<void> {
   try {
-    await apiRequest<{ status: string }>('/api/v1/feedback', { method: 'POST', body: payload });
+    await apiRequest<{ status: string }>('/api/v1/feedback', {
+      method: 'POST',
+      body: payload,
+      headers: sessionId ? { 'X-Session-Id': sessionId } : undefined,
+    });
   } catch (error) {
     // 404 aqui significa que o backend não conhece este query_id.
     if (error instanceof ApiError && error.status === 404) {

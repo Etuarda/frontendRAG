@@ -1,237 +1,115 @@
 # Integração do frontend NEXO com o backend
 
-Este documento descreve **como o frontend React implementa** o contrato oficial da API.
-A fonte de verdade é o `FRONTEND_API_CONTRACT.md` do repositório do backend: se os dois
-divergirem, vale o contrato, e este documento deve ser corrigido.
+O contrato oficial está em `docs/FRONTEND_API_CONTRACT.md` no repositório do backend. O frontend consome somente a API real: não há mocks, dados de catálogo locais nem chave administrativa no JavaScript.
 
-O frontend não conhece detalhes internos do RAG (FAISS, BM25, RRF, rerank, SQLite).
-Ele só envia requisições HTTP e exibe o que o backend devolve.
+## Configuração
 
-## 1. Configuração: `VITE_API_BASE_URL`
+`VITE_API_BASE_URL` define o backend. Em desenvolvimento, `.env.development` aponta para `http://localhost:8080`.
 
-Toda chamada usa a URL definida em `VITE_API_BASE_URL`. Nenhum componente ou service
-contém endereço fixo.
+Na publicação, o workflow usa a URL pública de demo `https://earlobe-lagged-outscore.ngrok-free.dev`
+como padrão; `vars.VITE_API_BASE_URL` pode substituí-la. O Pages precisa usar **GitHub Actions**
+como origem, não a raiz de uma branch. Configuração, validações e publicação:
+[DEPLOY_GITHUB_PAGES.md](DEPLOY_GITHUB_PAGES.md).
 
-| Ambiente | Onde a variável é definida | Valor típico |
-| --- | --- | --- |
-| Desenvolvimento (`npm run dev`) | `.env.development` (versionado) | `http://localhost:8080` |
-| Override local | `.env.development.local` (não versionado) | qualquer URL |
-| Build manual para o Pages (`npm run build:pages`) | `.env.production.local` (não versionado) | URL HTTPS do backend |
-| Build pelo GitHub Actions | variável do repositório `VITE_API_BASE_URL` | URL HTTPS do backend |
+O site público nunca usa `RAG_API_KEY` ou `X-API-Key`. Essa credencial pertence apenas a quem opera o backend. O acesso ao caminho de uma conversa usa o `session_id` devolvido pela própria API.
 
-Se a variável estiver vazia no build, a interface mostra
-"O endereço do backend não foi configurado (VITE_API_BASE_URL)" em toda tela que depende
-da API. Não há valor padrão escondido.
+### Limitação do backend local
 
-## 2. Estrutura dos services
+Quando o backend existe somente em `localhost`, o GitHub Pages publica a interface,
+mas não consegue oferecer a integração RAG para outros dispositivos: `localhost`
+sempre aponta para a máquina de quem abriu o navegador. Nesse cenário, a validação
+integrada deve ser feita com `npm run dev` na mesma máquina do backend. Para uma demo
+pública, ainda é necessário expor o backend por HTTPS e configurar
+`VITE_API_BASE_URL` antes do build.
+
+## Cliente e serviços
 
 ```text
 src/services/
-├── api.ts                    # cliente HTTP único: URL base, timeout, erros por status
-├── health.service.ts         # GET  /health
+├── api.ts                    # cliente HTTP, timeouts e erros
 ├── query.service.ts          # POST /api/v1/query
-├── history.service.ts        # GET  /api/v1/history
+├── trace.service.ts          # traces por pergunta e sessão
 ├── feedback.service.ts       # POST /api/v1/feedback
-├── contracts.service.ts      # GET  /api/v1/explore/contratacoes
-├── documents.service.ts      # GET  /api/v1/explore/documentos
-├── organizations.service.ts  # GET  /api/v1/explore/orgaos
-├── sources.service.ts        # GET  /api/v1/explore/fontes
-└── project.service.ts        # GET  /api/v1/project/summary
+├── health.service.ts         # GET /health
+└── *-service.ts              # catálogos públicos
 ```
 
-Os tipos de resposta estão em `src/types/api.ts`, copiados da seção 15 do contrato.
-Tipos que existem só na interface (navegação, turnos da conversa) ficam em `src/types/app.ts`.
+Fluxo: `Página/Componente → hook → service → api.ts → FastAPI`.
 
-Fluxo obrigatório, sem exceções:
+## Conversa e sessão
 
-```text
-Página/Componente → hook → service → api.ts → FastAPI
+1. A primeira pergunta é enviada sem `session_id`.
+2. A resposta traz `query_id` e `session_id`.
+3. O `session_id` é guardado em `sessionStorage`, isolado por aba.
+4. Perguntas seguintes reenviam o mesmo id e até dez trocas anteriores em `historico`.
+5. Se uma sessão restaurada produzir `422`, o frontend descarta o id e repete uma única vez sem ele.
+6. “Nova conversa” limpa respostas e sessão.
+
+O conteúdo das respostas não é persistido no navegador. `localStorage` guarda somente a preferência visual de sidebar recolhida.
+
+## Rastreabilidade
+
+Cada resposta possui “Ver caminho”, que chama:
+
+```http
+GET /api/v1/trace/{query_id}
+X-Session-Id: <session_id>
 ```
 
-Componentes nunca chamam `fetch`. Os hooks principais são:
+A tela resume bases SQL/vetorial, evidências, fontes citadas, confiança/recusa e tempo. A linha do tempo mostra etapa, base, status, latência e detalhes. Evidências aparecem em tabela com scores e movimento no rerank; SQL, resultados, entrada/saída e prompt ficam recolhidos.
 
-| Hook | Uso |
-| --- | --- |
-| `useApiResource` | um recurso (fontes, resumo do projeto, histórico) com `loading/success/empty/error` |
-| `usePaginatedList` | listas do Explorar com `limit`/`offset` e botão "Carregar mais" |
-| `useRagWorkspace` | conversa da sessão atual (consulta, avaliação, reabrir item do histórico) |
-| `useHealth` | indicador "Backend online/offline" da sidebar, rechecado a cada 30 s |
+O topo da conversa possui “Caminho da conversa”:
 
-### `api.ts`
+```http
+GET /api/v1/sessions/{session_id}/trace
+X-Session-Id: <session_id>
+```
 
-- **Timeouts:** 20 s para catálogo e 240 s para `/api/v1/query`: o backend espera até 180 s pelo LLM, mais a busca.
-- **Status preservado:** todo erro vira `ApiError` com `kind` (`config`, `network`, `timeout`, `http`)
-  e `status`.
-- **Mensagem de erro:** usa o `detail` do FastAPI quando existe, seja texto ou lista de validação.
-  Sem `detail`, usa a mensagem padrão do status (seção 4 deste documento).
-- **Parâmetros vazios:** não são enviados, para valer o padrão do backend.
+Ela mostra totais da sessão e uma linha por pergunta. Clicar em uma pergunta abre seu trace individual.
 
-## 3. Páginas e endpoints
+Erros específicos:
 
-| Página | Endpoint(s) | Parâmetros usados |
-| --- | --- | --- |
-| Consulta | `POST /api/v1/query`, `POST /api/v1/feedback` | `query`, `top_k=5` |
-| Histórico | `GET /api/v1/history` | `limit=100` (máximo do contrato) |
-| Contratações | `GET /api/v1/explore/contratacoes` | `busca`, `orgao`, `limit=24`, `offset` |
-| Documentos | `GET /api/v1/explore/documentos` | `busca`, `tipo`, `limit=24`, `offset` |
-| Órgãos | `GET /api/v1/explore/orgaos` | `busca`, `limit=24`, `offset` |
-| Fontes oficiais | `GET /api/v1/explore/fontes` | nenhum |
-| Transparência da IA | `GET /api/v1/project/summary` | nenhum |
-| Sobre o projeto | `GET /api/v1/project/summary` (versão resumida) | nenhum |
-| Sidebar | `GET /health` | nenhum |
+- `401`: “Este caminho pertence a outra conversa.”
+- `404`: explica que a pergunta pode ser anterior ao recurso de rastreabilidade.
+- Rede: mensagem de conexão e botão “Tentar de novo”.
 
-As buscas de texto esperam 400 ms sem digitação antes de chamar a API.
-O filtro `tipo` de Documentos oferece só os rótulos do contrato:
-`Normativo`, `Contrato`, `Ata de Registro`, `PCA` e `Conversa sintética`.
-O backend atual oferece todas essas rotas; o suplemento é identificado como
-sintético e as cinco conversas restritas não aparecem no catálogo.
+Saudações e conversas sem busca aparecem como “Conversa — sem consulta ao acervo”.
 
-Campos `null` aparecem como "Não informado". Nada é inferido: status, modalidade, sigla,
-categoria e URL só são exibidos quando a API os envia.
+As buscas de texto esperam 400 ms sem digitação antes de chamar a API. O filtro
+de documentos oferece somente os tipos do contrato: `Normativo`, `Contrato`,
+`Ata de Registro`, `PCA` e `Conversa sintética`. Conteúdo sintético é identificado
+como tal na resposta e as conversas restritas não são expostas no catálogo.
 
-## 4. Estados de tela
+## Histórico da sessão
 
-Toda tela que consome a API tem quatro estados distintos:
+A página pública de Histórico chama `GET /api/v1/history` somente quando existe uma
+sessão ativa e envia `X-Session-Id`. Assim, o usuário vê apenas as consultas da própria
+conversa. O frontend não envia nem embute `X-API-Key`; o histórico administrativo/global
+continua restrito ao backend.
 
-| Estado | Quando | O que aparece |
-| --- | --- | --- |
-| `loading` | requisição em andamento | indicador "Carregando..." |
-| `success` | 200 com dados | os dados |
-| `empty` | 200 com `[]` | mensagem de lista vazia |
-| `error` | qualquer falha | mensagem real + botão "Tentar novamente" |
+O cliente HTTP também envia `ngrok-skip-browser-warning: 1` de forma centralizada em
+todas as rotas. A URL vem exclusivamente de `VITE_API_BASE_URL`.
 
-Mensagens por status (quando o backend não envia `detail`):
+## Execução local
 
-| Código | Mensagem |
-| --- | --- |
-| rede | "Não foi possível conectar ao backend. Verifique se ele está em execução." |
-| timeout | "O servidor demorou demais para responder. Tente novamente." |
-| 404 | "Recurso não encontrado." (no feedback: "Esta consulta não foi encontrada no servidor.") |
-| 422 | detalhes de validação do FastAPI, ou "Os dados enviados são inválidos." |
-| 500 | "O servidor não conseguiu concluir a solicitação. Tente novamente." |
-| 503 | "O acervo está temporariamente indisponível. Tente novamente em instantes." |
+```powershell
+# Backend
+python -m uvicorn app.api:app --host 127.0.0.1 --port 8080
 
-Erro nunca é trocado por mock, catálogo local ou sucesso falso.
-
-## 5. Fluxo Consulta → `query_id` → Feedback
-
-1. A pergunta (1 a 4.000 caracteres) é enviada como `{ "query": "...", "top_k": 5 }`.
-2. A resposta, incluindo o `query_id`, é guardada no turno da conversa, em memória.
-   O frontend não gera nem altera ids.
-3. Abaixo de cada resposta aparece "Esta resposta foi útil?":
-   - **Sim** envia `{ query_id, avaliacao: "positivo", comentario: null }`;
-   - **Não** abre um campo de comentário opcional (até 2.000 caracteres) e envia
-     `{ query_id, avaliacao: "negativo", comentario }`.
-4. "Feedback registrado" só aparece depois do `200`. Em caso de 404, 422, 500 ou falha de rede,
-   a mensagem real aparece com "Tentar novamente".
-
-### Conversa contínua
-
-Depois da primeira resposta, um campo fixo no rodapé permite fazer novas perguntas na mesma tela.
-Saudações, agradecimentos e mensagens comuns podem receber resposta de conversa,
-sem busca nem fontes. Mensagens longas são interpretadas pela intenção: um relato
-ou pedido de ajuda não é automaticamente uma consulta ao acervo. A interface
-identifica respostas sem busca como “Conversa — sem consulta ao acervo”, sem
-mostrar recusa nem atribuir evidência factual. Consultas sobre fatos continuam
-exigindo fontes, e os guardrails de dados bancários/credenciais permanecem.
-
-Cada pergunta é uma consulta independente para o backend. O contrato aceita só `query` e `top_k`,
-então o contexto das perguntas anteriores **não** é enviado. A conversa existe apenas na sessão
-aberta; "Nova conversa" limpa a tela.
-
-## 6. Fluxo do Histórico
-
-- A página Histórico chama `GET /api/v1/history?limit=100` toda vez que é aberta.
-  Não existe cópia em `localStorage`, `sessionStorage` ou memória entre sessões.
-- Cada item mostra pergunta, data (`ts`), nível de evidência, resumo da resposta, número de fontes
-  e a última avaliação registrada (`feedback`).
-- Abrir um item leva a resposta para a tela de Consulta, já marcada como avaliada se houver
-  feedback, e permite continuar perguntando.
-- O campo "Filtrar consultas carregadas" só filtra os itens já recebidos; não chama a API.
-- Como o backend grava cada consulta isoladamente, o histórico lista consultas, não conversas.
-- **Abertura temporária da demo:** o histórico geral não exige chave e pode mostrar
-  consultas de todos os usuários. Não exponha conteúdo sensível. O filtro de sessão
-  não autentica o usuário, e os endpoints de trace continuam protegidos. Versões
-  anteriores do backend podem retornar `401`/`403`; aplique a correção e reinicie a
-  API, sem embutir `RAG_API_KEY` em variáveis `VITE_*`.
-
-## 7. Executando frontend e backend localmente
-
-Para uma instalação após clone, siga [GUIA_EXECUCAO_LOCAL.md](GUIA_EXECUCAO_LOCAL.md):
-backend na branch `joao-reis` e esta fork (`sevenRevy/frontendRAG`) na `main`.
-Depois da instalação:
-
-```bash
-# Terminal 1: backend (na raiz do repositório do backend)
-python -m uvicorn app.api:app --reload --host 127.0.0.1 --port 8080
-
-# Terminal 2: frontend
-npm ci
-npm run check:backend
-npm run check:query
+# Frontend
+npm install
 npm run dev
 ```
 
-Abra `http://localhost:5173`. O backend libera CORS para `http://localhost:5173` e
-`http://127.0.0.1:5173`. Com o backend desligado, a sidebar mostra "Backend offline" e cada
-página mostra erro de conexão.
+Abra `http://localhost:5173`.
 
-## 8. Backend HTTPS para o GitHub Pages
+Diagnóstico sem navegador:
 
-O GitHub Pages serve só a interface, por HTTPS. Nesta fork, a origem é
-`https://sevenrevy.github.io` (o projeto, quando publicado, fica em `/frontendRAG/`).
-No repositório original, a origem é `https://etuarda.github.io`. Para funcionar,
-ele precisa de:
+```powershell
+npm run check:backend
+npm run check:query
+```
 
-1. **Backend acessível por HTTPS**: servidor próprio ou túnel (ex.: `cloudflared tunnel --url http://localhost:8080`
-   ou `ngrok http 8080`).
-2. **CORS liberado no backend para a origem do site.** O backend permite as origens
-   locais e a origem original da Etuarda. Para esta fork, acrescente
-   `https://sevenrevy.github.io` a `CORS_ALLOW_ORIGINS` no `.env` do backend e reinicie
-   a API. Sem isso, o navegador bloqueia as chamadas.
-3. **URL no build**, por um destes caminhos:
-   - **Build manual:** crie `.env.production.local` com
-     `VITE_API_BASE_URL=https://URL-DO-BACKEND`, rode `npm run build:pages` e faça commit de
-     `index.html`, `assets/` e `docs/`;
-   - **GitHub Actions:** crie a variável `VITE_API_BASE_URL` em
-     *Settings → Secrets and variables → Actions → Variables*. O workflow `deploy.yml` a usa no build.
+## Testes
 
-A URL do backend fica embutida no JavaScript publicado. Trocar de ambiente exige só um novo build,
-sem mudar código.
-
-## 9. Testes automatizados
-
-`npm test` roda os testes da interface com Vitest/Testing Library e os testes dos
-scripts de diagnóstico com `node:test`. Nos testes da interface, o `fetch` é substituído
-por `src/test/http.ts`: nenhuma requisição sai da máquina e nada disso entra no build.
-Os testes dos scripts também usam respostas controladas, sem backend ou LLM.
-
-| Arquivo | O que garante |
-| --- | --- |
-| `scripts/check-backend.test.mjs` | diagnóstico de API/corpus/banco, pergunta com fontes, falhas HTTP/rede/timeout e configuração de desenvolvimento |
-| `services/api.test.ts` | URL base, parâmetros vazios omitidos, JSON no POST, falha de rede, timeout, 404/422/500/503 e URL não configurada |
-| `services/services.test.ts` | corpo exato do `/query` (`query` + `top_k`), `query_id` intacto no feedback, 404 do feedback, `limit` do histórico, filtros do Explorar, `/health` |
-| `hooks/usePaginatedList.test.ts` | paginação por `offset`, estados `empty` e `error`, recarga ao mudar filtros |
-| `components/feedback/AnswerFeedback.test.tsx` | confirmação só após o 200, comentário no negativo, erro real com nova tentativa |
-| `pages/pages.test.tsx` | `null` como "Não informado", erro com "Tentar novamente", histórico vazio sem exemplos, app com backend desligado |
-
-O workflow `deploy.yml` roda os testes antes do build: se algum falhar, o deploy não acontece.
-
-## 10. O que foi removido
-
-| Removido | Motivo |
-| --- | --- |
-| `src/mocks/rag.mock.ts` e `VITE_USE_MOCKS` | respostas simuladas |
-| `catch` que devolvia mock quando a API falhava | escondia o erro real |
-| Feedback que confirmava sucesso mesmo com falha | sucesso falso |
-| `src/utils/catalog.ts` (`CONTRATACOES_MOCK`, `DOCUMENTOS_MOCK`, `ORGAOS_MOCK`, `OFFICIAL_SOURCES`) | catálogos hardcoded |
-| Histórico em `localStorage`/`sessionStorage` (e migração do formato antigo) | fonte paralela ao backend |
-| Envio de `fonte_filter`, `search_strategy`, `conversation_id` e `history` | campos fora do contrato |
-| Seletores de fonte, ano e estratégia na busca | filtros que o backend não oferece |
-| Painel "Ver detalhes da recuperação" | valores inventados (ex.: reranker) e detalhes internos do RAG |
-| Textos sobre BM25/RRF/rerank e "fidelidade superior a 92%" | detalhes internos e estatística sem fonte |
-| Indicador fixo "Sistema online" | substituído por `GET /health` real |
-| Pastas sem uso `src/features`, `src/shared`, `src/domain` | código morto com dados fixos |
-
-Única persistência no navegador que permanece: a preferência de sidebar recolhida no desktop
-(`localStorage`). É uma conveniência de interface e não guarda dados da API.
+`npm test` cobre cliente HTTP, sessão por aba, reenvio de contexto, recuperação de `422`, autenticação do trace por `X-Session-Id`, erros `401/404`, serviços, paginação, feedback e estados de página. `npm run build` executa a checagem TypeScript e o build Vite.

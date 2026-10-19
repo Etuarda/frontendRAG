@@ -24,10 +24,8 @@ export function ContratacoesPage({ onSearchQuery }: ContratacoesPageProps) {
   const list = usePaginatedList(listContracts, filters);
 
   const handleConsultar = (contrato: ContratacaoRecord) => {
-    // Usa o PNCP control number (id) em vez do numero_contrato, que pode não estar no banco.
-    const pncp = contrato.id;
     const doOrgao = contrato.orgao ? ` do órgão ${contrato.orgao}` : '';
-    onSearchQuery(`Quais são os detalhes do contrato PNCP ${pncp}${doOrgao}?`);
+    onSearchQuery(`Quais são os detalhes do contrato PNCP ${contrato.id}${doOrgao}?`);
   };
 
   return (

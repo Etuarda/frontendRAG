@@ -5,9 +5,6 @@ const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/+$/, '
 // Consultas RAG podem levar bem mais que as de catálogo: o backend espera até 180 s pelo LLM
 // (GENERATION_TIMEOUT), mais o tempo de busca. Cada service escolhe seu limite.
 export const TIMEOUT_DEFAULT_MS = 20_000;
-// Explorar acervo pode pagar a primeira carga do snapshot do JSONL (~7 s);
-// 30 s cobre esse piso frio sem esconder falhas verdadeiras do servidor.
-export const TIMEOUT_CATALOG_MS = 30_000;
 export const TIMEOUT_QUERY_MS = 240_000;
 
 export type ApiErrorKind = 'config' | 'network' | 'timeout' | 'http';
@@ -31,13 +28,11 @@ interface RequestOptions {
   body?: unknown;
   params?: Record<string, QueryValue>;
   timeoutMs?: number;
-  /** Sessão da conversa: vira o header `X-Session-Id` (persona "novo usuário"). */
-  sessionId?: string;
+  headers?: Record<string, string>;
 }
 
 // Mensagens por status seguem a seção 13 do contrato.
 const STATUS_MESSAGES: Record<number, string> = {
-  401: 'Não identificado. Reabra o chat para retomar a sua sessão.',
   404: 'Recurso não encontrado.',
   422: 'Os dados enviados são inválidos.',
   500: 'O servidor não conseguiu concluir a solicitação. Tente novamente.',
@@ -77,16 +72,20 @@ export async function apiRequest<T>(endpoint: string, options: RequestOptions = 
     );
   }
 
-  const { method = 'GET', body, params, timeoutMs = TIMEOUT_DEFAULT_MS, sessionId } = options;
+  const { method = 'GET', body, params, timeoutMs = TIMEOUT_DEFAULT_MS } = options;
   const controller = new AbortController();
   const timer = window.setTimeout(() => controller.abort(), timeoutMs);
 
-  const headers: Record<string, string> = {};
-  if (body !== undefined) headers['Content-Type'] = 'application/json';
-  if (sessionId) headers['X-Session-Id'] = sessionId;
-
   let response: Response;
   try {
+    // Evita a pagina intermediaria do ngrok em todas as rotas (health, catalogos,
+    // consulta, historico, feedback e trace). Headers especificos sao preservados.
+    const headers: Record<string, string> = {
+      'ngrok-skip-browser-warning': '1',
+      ...options.headers,
+    };
+    if (body !== undefined) headers['Content-Type'] = 'application/json';
+
     response = await fetch(buildUrl(endpoint, params), {
       method,
       headers: Object.keys(headers).length > 0 ? headers : undefined,

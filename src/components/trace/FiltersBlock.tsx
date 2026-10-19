@@ -1,0 +1,3 @@
+import { FILTER_REASONS } from './traceLabels';
+const entries=(v:unknown)=>v&&typeof v==='object'?Object.entries(v as Record<string,unknown>):[];
+export function FiltersBlock({ detalhes }: { detalhes: Record<string, unknown> }) { const applied=entries(detalhes.filtros), ignored=entries(detalhes.filtros_ignorados); if(!applied.length&&!ignored.length)return null; return <div className="trace-filters">{applied.length?<section><h4>Filtros aplicados</h4>{applied.map(([k,v])=><p key={k}><strong>{k}:</strong> {typeof v==='object'?JSON.stringify(v):String(v)}</p>)}</section>:null}{ignored.length?<section><h4>Filtros não aplicados</h4>{ignored.map(([k,v])=><p key={k}><strong>{k}:</strong> {FILTER_REASONS[String(v)]??String(v)}</p>)}</section>:null}</div>; }

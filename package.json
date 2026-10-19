@@ -8,19 +8,19 @@
     "build": "tsc -b && vite build",
     "build:pages": "npm run build && node scripts/sync-pages.mjs",
     "preview": "vite preview",
-    "test": "vitest run && node --test scripts/check-backend.test.mjs",
+    "test": "vitest run && node --test scripts/validate-pages-config.test.mjs",
+    "test:watch": "vitest",
     "check:backend": "node scripts/check-backend.mjs",
     "check:query": "node scripts/check-backend.mjs --query",
-    "test:watch": "vitest",
+    "check:pages": "node scripts/validate-pages-config.mjs",
+    "check:pages-build": "node scripts/validate-pages-config.mjs --dist",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist"
   },
   "homepage": "https://etuarda.github.io/frontendRAG/",
   "dependencies": {
     "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "react-markdown": "^10.1.0",
-    "remark-gfm": "^4.0.1"
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@testing-library/dom": "^10.4.2",

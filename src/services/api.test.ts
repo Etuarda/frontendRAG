@@ -19,7 +19,16 @@ describe('apiRequest', () => {
     expect(calls[0].method).toBe('POST');
     expect(calls[0].body).toEqual({ query: 'a' });
     const init = fetchStub.mock.calls[0][1] as RequestInit;
-    expect(init.headers).toEqual({ 'Content-Type': 'application/json' });
+    expect(init.headers).toEqual({
+      'Content-Type': 'application/json',
+      'ngrok-skip-browser-warning': '1',
+    });
+  });
+
+  it('envia o header do ngrok também em requisições GET', async () => {
+    const { calls } = stubFetch(() => json(200, { status: 'ok' }));
+    await apiRequest('/health');
+    expect(calls[0].headers.get('ngrok-skip-browser-warning')).toBe('1');
   });
 
   it('transforma falha de rede em erro de conexão (sem dado substituto)', async () => {

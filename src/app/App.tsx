@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import type { HistoryItem } from '../types/api';
 import type { AppView } from '../types/app';
 import { useRagWorkspace } from '../hooks/useRagWorkspace';
 import { useSidebar } from '../hooks/useSidebar';
@@ -9,7 +8,6 @@ import { Icon } from '../components/ui/Icon';
 import nexoLogo from '../assets/nexo.png';
 
 import { ConsultaPage } from '../pages/Consulta/ConsultaPage';
-import { HistoricoPage } from '../pages/Historico/HistoricoPage';
 import { ContratacoesPage } from '../pages/Contratacoes/ContratacoesPage';
 import { DocumentosPage } from '../pages/Documentos/DocumentosPage';
 import { OrgaosPage } from '../pages/Orgaos/OrgaosPage';
@@ -17,6 +15,7 @@ import { FontesPage } from '../pages/Fontes/FontesPage';
 import { TransparenciaPage } from '../pages/Transparencia/TransparenciaPage';
 import { SobrePage } from '../pages/Sobre/SobrePage';
 import { ComoFuncionaPage } from '../pages/Sobre/ComoFuncionaPage';
+import { HistoricoPage } from '../pages/Historico/HistoricoPage';
 
 export function App() {
   const [activeView, setActiveView] = useState<AppView>('consulta');
@@ -26,11 +25,6 @@ export function App() {
 
   const handleNewQuery = () => {
     workspace.startNewConversation();
-    setActiveView('consulta');
-  };
-
-  const handleOpenHistoryItem = (item: HistoryItem) => {
-    workspace.openHistoryItem(item);
     setActiveView('consulta');
   };
 
@@ -47,21 +41,17 @@ export function App() {
         return (
           <ConsultaPage
             turns={workspace.turns}
+            sessionId={workspace.sessionId}
             pendingQuery={workspace.pendingQuery}
             loading={workspace.loading}
+            estimatedDurationMs={workspace.estimatedDurationMs}
             error={workspace.error}
+            errorKind={workspace.errorKind}
             onSubmitQuery={workspace.submitQuery}
+            onRetryQuery={workspace.retryQuery}
             onRated={workspace.markRated}
             onNewConversation={handleNewQuery}
             onNavigate={setActiveView}
-          />
-        );
-
-      case 'historico':
-        return (
-          <HistoricoPage
-            onOpenItem={handleOpenHistoryItem}
-            onNewQuery={handleNewQuery}
           />
         );
 
@@ -76,6 +66,9 @@ export function App() {
 
       case 'fontes':
         return <FontesPage />;
+
+      case 'historico':
+        return <HistoricoPage sessionId={workspace.sessionId} onNewQuery={handleNewQuery} />;
 
       case 'como-funciona':
         return <ComoFuncionaPage onNavigate={setActiveView} />;

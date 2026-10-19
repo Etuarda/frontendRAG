@@ -24,7 +24,7 @@ export default defineConfig({
     strictPort: true,
   },
   test: {
-    // Os scripts de diagnóstico usam node:test, não o ambiente de navegador.
+    // Scripts de publicação usam node:test, não o ambiente de navegador.
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],

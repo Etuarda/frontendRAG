@@ -17,6 +17,7 @@ window.matchMedia ??= ((query: string) => ({
 
 afterEach(() => {
   cleanup();
+  window.sessionStorage.clear();
   vi.unstubAllGlobals();
   vi.useRealTimers();
 });

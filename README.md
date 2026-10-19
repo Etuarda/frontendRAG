@@ -43,6 +43,27 @@ O diagnóstico rápido não garante que o LLM esteja disponível nem testa CORS;
 | `npm run build` | Checagem de tipos e build de produção em `dist/` |
 | `npm run build:pages` | Build + cópia para `assets/` e `docs/` (GitHub Pages) |
 | `npm run preview` | Serve o build de `dist/` localmente |
+| `npm run check:backend` | Verifica o `/health` do backend configurado |
+| `npm run check:query` | Executa uma pergunta real no pipeline RAG |
+| `npm run check:pages` | Valida a URL HTTPS do backend antes da publicação |
+| `npm run check:pages-build` | Confere o index e a URL incorporada ao bundle em `dist/` |
+
+Todas as chamadas usam `VITE_API_BASE_URL` e enviam `ngrok-skip-browser-warning: 1`.
+Para testar outro backend localmente, defina a variável em `.env.development.local`.
+
+## Publicação no GitHub Pages
+
+O workflow já incorpora `https://earlobe-lagged-outscore.ngrok-free.dev` como backend
+padrão da demo. Opcionalmente, `vars.VITE_API_BASE_URL` substitui esse endereço: cadastre
+em **Settings → Secrets and variables → Actions → Variables**, não em Secrets.
+
+**Quem administra o repositório precisa selecionar Settings → Pages → Source → GitHub
+Actions.** Não use publicação pela raiz da `main`: ela serve os bundles legados em vez
+do `dist/` gerado pelo workflow. Após integrar a correção e alterar essa configuração,
+execute **Actions → Deploy to GitHub Pages → Run workflow** na `main`.
+
+O workflow bloqueia publicação com configuração inválida e verifica a URL no artefato.
+Passo a passo e diagnóstico: [docs/DEPLOY_GITHUB_PAGES.md](docs/DEPLOY_GITHUB_PAGES.md).
 
 Para testar outra pergunta: `npm run check:backend -- --query "Sou MEI, posso participar de pregão eletrônico?"`.
 
