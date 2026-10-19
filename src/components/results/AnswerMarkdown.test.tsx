@@ -47,7 +47,7 @@ describe('Resposta em Markdown', () => {
         bases_consultadas: ['estruturada'], confidence_level: 'alta', is_refusal: false, refusal_reason: null,
         sources_used: [{ chunk_id: 'sql:contratacoes:1', base_id: 'contratos_estruturado', source_file: 'base.sqlite' }] },
     };
-    render(<ConversationTurnView turn={turn} onRated={() => undefined} />);
+    render(<ConversationTurnView turn={turn} onRated={() => undefined} onViewTrace={() => undefined} />);
     expect(screen.getByRole('table')).toBeInTheDocument();
     expect(screen.getByText('Fontes utilizadas (1)')).toBeInTheDocument();
     expect(screen.getByText('base.sqlite')).toBeInTheDocument();
