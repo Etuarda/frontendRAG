@@ -37,3 +37,6 @@ dist-ssr/
 
 .vite/
 
+# Temporary validation files and local worktrees
+.tmp/
+

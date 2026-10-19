@@ -207,6 +207,30 @@ export interface ProjectBaseSummary {
   status: string | null;
   documentos: number;
   formatos: Record<string, number>;
+  documentos_ativos?: number | null;
+  chunks_ativos?: number | null;
+  vetores_ativos?: number | null;
+}
+
+export interface ActiveCorpusSummary {
+  versao: string | null;
+  snapshot_id: string | null;
+  construido_em: string | null;
+  total_documentos: number;
+  total_chunks: number;
+  total_vetores: number | null;
+  chunks_sem_vetor: number | null;
+  bytes_documents: number | null;
+  schema_sql: string | null;
+  vetores_por_base: Record<string, number>;
+  avisos: string[];
+}
+
+export interface SnapshotAnterior {
+  versao: string;
+  coletado_em: string | null;
+  arquivos: number;
+  backup: string | null;
 }
 
 export interface ProjectSummary {
@@ -215,6 +239,9 @@ export interface ProjectSummary {
   descricao: string | null;
   versao_manifesto: string | null;
   versao_corpus: string;
+  versao_inventario?: string | null;
+  corpus_ativo?: ActiveCorpusSummary | null;
+  snapshot_anterior?: SnapshotAnterior | null;
   coletado_em: string | null;
   inventario_completo: boolean;
   total_documentos: number;

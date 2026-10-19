@@ -7,27 +7,28 @@ interface Principle {
   text: string;
 }
 
-// Princípios de uso, sem detalhes de implementação do backend nem números próprios.
+// Fluxos efetivamente disponíveis no pipeline. Totais e versões vêm da API,
+// não de números ou nomes de modelos fixados nesta página.
 const PRINCIPLES: Principle[] = [
   {
     icon: 'compass',
     title: 'Respostas a partir do acervo oficial',
-    text: 'Cada resposta é construída com trechos recuperados das bases oficiais listadas abaixo e indica as fontes utilizadas.',
+    text: 'Perguntas documentais usam trechos recuperados das bases oficiais listadas abaixo. Contagens, valores e rankings são calculados em SQL na base estruturada; quando o SQL é suficiente, a busca documental não é executada. Cada resposta indica as fontes utilizadas.',
   },
   {
     icon: 'shield',
     title: 'Recusa quando não há evidência',
-    text: 'Se as fontes não sustentam uma resposta segura, o sistema recusa e explica o motivo, em vez de arriscar uma resposta.',
+    text: 'Se as fontes não sustentam uma resposta segura, o sistema recusa e explica o motivo. Sem evidência suficiente, também pode apresentar uma resposta limitada com ressalvas, em vez de arriscar uma resposta.',
   },
   {
     icon: 'info',
     title: 'Nível de evidência visível',
-    text: 'Toda resposta informa o nível de evidência (alto, moderado, baixo ou insuficiente) atribuído pelo servidor.',
+    text: 'As respostas exibem o nível de evidência atribuído pelo servidor: alto, moderado, baixo ou insuficiente. Esse nível considera as evidências e as limitações do recorte; não é uma probabilidade de acerto nem garantia de completude.',
   },
   {
     icon: 'thumbs-up',
     title: 'Avaliação de quem usa',
-    text: 'Você pode avaliar cada resposta. As avaliações ficam registradas junto da consulta no histórico.',
+    text: 'Você pode avaliar as respostas e conferir fontes, avisos e etapas registradas no histórico autorizado.',
   },
 ];
 

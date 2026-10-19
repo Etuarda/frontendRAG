@@ -1,4 +1,4 @@
-import { apiRequest } from './api';
+import { TIMEOUT_CATALOG_MS, apiRequest } from './api';
 import type { ContratacaoRecord } from '../types/api';
 
 export interface ContractFilters {
@@ -12,6 +12,6 @@ export function listContracts(
   page: { limit: number; offset: number }
 ): Promise<ContratacaoRecord[]> {
   return apiRequest<ContratacaoRecord[]>('/api/v1/explore/contratacoes', {
-    params: { ...filters, ...page },
+    params: { ...filters, ...page }, timeoutMs: TIMEOUT_CATALOG_MS,
   });
 }
