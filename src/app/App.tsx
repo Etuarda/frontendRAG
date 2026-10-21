@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import type { AppView } from '../types/app';
+import type { HistoryItem } from '../types/api';
+import type { ConversationTurn } from '../types/app';
 import { useRagWorkspace } from '../hooks/useRagWorkspace';
 import { useSidebar } from '../hooks/useSidebar';
 import { Sidebar, SIDEBAR_ID } from '../components/layout/Sidebar';
@@ -32,6 +34,21 @@ export function App() {
   const handleDirectSearch = (queryText: string) => {
     workspace.startNewConversation();
     workspace.submitQuery(queryText);
+    setActiveView('consulta');
+  };
+
+  // Clique num card do histórico restaura a conversa e navega para a consulta.
+  const handleOpenConversation = (item: HistoryItem) => {
+    const currentSessionId = workspace.sessionId;
+    const turn: ConversationTurn = {
+      response: {
+        ...item.resposta,
+        query_id: item.query_id,
+        session_id: currentSessionId ?? '',
+      },
+      feedback: item.feedback.length > 0 ? item.feedback[0].avaliacao : undefined,
+    };
+    workspace.restoreConversation([turn], currentSessionId);
     setActiveView('consulta');
   };
 
@@ -68,7 +85,7 @@ export function App() {
         return <FontesPage />;
 
       case 'historico':
-        return <HistoricoPage sessionId={workspace.sessionId} onNewQuery={handleNewQuery} />;
+        return <HistoricoPage sessionId={workspace.sessionId ?? workspace.previousSessionId} onNewQuery={handleNewQuery} onOpenConversation={handleOpenConversation} />;
 
       case 'como-funciona':
         return <ComoFuncionaPage onNavigate={setActiveView} />;

@@ -1319,6 +1319,38 @@ a {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
 }
 
+.history-feed-card--clickable {
+  padding: 0;
+}
+
+.history-feed-card-btn {
+  display: block;
+  width: 100%;
+  padding: 1.25rem;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.feed-card-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin-top: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--accent-gold);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.history-feed-card:hover .feed-card-cta {
+  opacity: 1;
+}
+
 .feed-card-header {
   display: flex;
   justify-content: space-between;
