@@ -12,7 +12,7 @@ import { EvidenceTable as DetailedEvidenceTable, ranksBefore } from './EvidenceT
 import { FiltersBlock } from './FiltersBlock';
 import { ModelUsage } from './ModelUsage';
 import { StageNotes } from './StageNotes';
-import { formatMs, STAGE_LABELS, STATUS_LABELS } from './traceLabels';
+import { formatMs, STAGE_LABELS, STATUS_PRESENTATION } from './traceLabels';
 
 interface TracePanelProps {
   sessionId: string;
@@ -57,7 +57,7 @@ function StageCard({ stage, previousRanks }: { stage: TraceStage; previousRanks:
     : null;
   const prompt = stage.detalhes.prompt ?? nestedResponse?.prompt;
   const status = String(stage.detalhes.outcome ?? stage.status);
-  const normalizedStatus = ['erro', 'erro_llm', 'saida_invalida'].includes(status) ? 'erro' : STATUS_LABELS[status] ? status : 'erro';
+  const statusPresentation = STATUS_PRESENTATION[status] ?? { label: status, semantic: 'neutral' };
   const envelope = ['interacao', 'requisicao_inicio', 'pipeline_inicio', 'pipeline_fim', 'persistencia_historico', 'requisicao_fim'].includes(stage.stage);
   return (
     <li className={`trace-stage-card${envelope ? ' trace-stage-envelope' : ''}`}>
@@ -67,7 +67,7 @@ function StageCard({ stage, previousRanks }: { stage: TraceStage; previousRanks:
           <div><strong>{STAGE_LABELS[stage.stage] ?? stage.stage.replaceAll('_', ' ')}</strong>{stage.base ? <span className={`trace-base-badge trace-base-${stage.base}`}>{stage.base === 'sql' ? 'SQL' : 'Vetorial'}</span> : null}</div>
           <span>{formatMs(stage.latencia_ms)}</span>
         </div>
-        <span className={`trace-status trace-status-${normalizedStatus}`}>{STATUS_LABELS[status] ?? status}</span>
+        <span className={`trace-status trace-status-${statusPresentation.semantic}`}>{statusPresentation.label}</span>
         {stage.detalhes.tentativa_busca === 2 && ['retrieval_denso', 'retrieval_bm25', 'fusao_rrf', 'rerank'].includes(stage.stage) ? <span className="trace-attempt">2ª tentativa · sem filtros</span> : null}
         <details className="trace-stage-details">
           <summary>Ver detalhes</summary>

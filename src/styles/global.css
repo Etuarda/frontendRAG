@@ -2038,12 +2038,10 @@ a {
 .trace-base-sql { background: #eaf3ff; color: #245a9a; }
 .trace-base-vetorial { background: #f0ebff; color: #6941a5; }
 .trace-status { margin-top: 0.45rem; background: var(--border-subtle); color: var(--text-secondary); }
-.trace-status-ok { background: #e9f7ee; color: #28633e; }
-.trace-status-pulado { background: #eef1f4; color: #52606d; }
-.trace-status-degradado { background: #fff4dd; color: #745215; }
-.trace-status-recusa { background: #f4ecff; color: #6941a5; }
-.trace-status-erro { background: #fff0ed; color: #9d2f24; }
-.trace-status-conversa { background: #eaf3ff; color: #245a9a; }
+.trace-status-success { background: #e9f7ee; color: #28633e; }
+.trace-status-neutral { background: #eef1f4; color: #52606d; }
+.trace-status-warning { background: #fff4dd; color: #745215; }
+.trace-status-danger { background: #fff0ed; color: #9d2f24; }
 .trace-stage-envelope .trace-stage-content { background: color-mix(in srgb, var(--border-subtle) 28%, transparent); opacity: .82; }
 .trace-stage-envelope .trace-stage-marker { background: var(--text-secondary); }
 

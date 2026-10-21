@@ -51,7 +51,7 @@ describe('TracePanel', () => {
   it('normaliza outcome e mostra plano B de etapa degradada', async () => {
     stubFetch(() => json(200, { ...TRACE, etapas: [{ ...TRACE.etapas[0], status: 'ok', detalhes: { outcome: 'degradado', fallback: 'busca sem filtros' } }] }));
     render(<TracePanel sessionId="s_1234567890123456" queryId="q_1" onClose={vi.fn()} />);
-    expect(await screen.findByText('com contorno')).toHaveClass('trace-status-degradado');
+    expect(await screen.findByText('com reserva')).toHaveClass('trace-status-warning');
     await userEvent.click(screen.getByText('Ver detalhes'));
     expect(screen.getByText(/Plano B/).parentElement).toHaveTextContent('busca sem filtros');
   });
@@ -59,7 +59,7 @@ describe('TracePanel', () => {
   it('mostra status pulado e seu motivo', async () => {
     stubFetch(() => json(200, { ...TRACE, etapas: [{ ...TRACE.etapas[0], status: 'pulado', detalhes: { motivo: 'calculo_sql_suficiente' } }] }));
     render(<TracePanel sessionId="s_1234567890123456" queryId="q_1" onClose={vi.fn()} />);
-    expect(await screen.findByText('não executada')).toHaveClass('trace-status-pulado');
+    expect(await screen.findByText('não executada')).toHaveClass('trace-status-neutral');
     await userEvent.click(screen.getByText('Ver detalhes'));
     expect(screen.getByText(/cálculo SQL respondeu sozinho/)).toBeInTheDocument();
   });
@@ -73,5 +73,26 @@ describe('TracePanel', () => {
     expect(screen.getByText('Fim do processamento')).toBeInTheDocument();
     expect(screen.getByText('Gravação no histórico')).toBeInTheDocument();
     expect(screen.getByText('Resposta enviada')).toBeInTheDocument();
+  });
+
+  it('aplica a semântica visual explícita dos status', async () => {
+    const statuses = ['iniciado', 'iniciado', 'ok', 'pulado', 'degradado', 'recusa', 'erro', 'rejeitado', 'desconhecido'];
+    stubFetch(() => json(200, {
+      ...TRACE,
+      etapas: statuses.map((status, ordem) => ({
+        ...TRACE.etapas[0], ordem, stage: ordem === 0 ? 'requisicao_inicio' : ordem === 1 ? 'pipeline_inicio' : `etapa_${ordem}`, status, detalhes: {},
+      })),
+    }));
+    render(<TracePanel sessionId="s_1234567890123456" queryId="q_1" onClose={vi.fn()} />);
+
+    expect(await screen.findAllByText('registrado')).toHaveLength(2);
+    screen.getAllByText('registrado').forEach((status) => expect(status).toHaveClass('trace-status-neutral'));
+    expect(screen.getByText('concluído')).toHaveClass('trace-status-success');
+    expect(screen.getByText('não executada')).toHaveClass('trace-status-neutral');
+    expect(screen.getByText('com reserva')).toHaveClass('trace-status-warning');
+    expect(screen.getByText('recusada')).toHaveClass('trace-status-warning');
+    expect(screen.getByText('erro')).toHaveClass('trace-status-danger');
+    expect(screen.getByText('rejeitado')).toHaveClass('trace-status-danger');
+    expect(screen.getByText('desconhecido')).toHaveClass('trace-status-neutral');
   });
 });
