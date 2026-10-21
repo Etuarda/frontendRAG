@@ -41,6 +41,7 @@ export function useRagWorkspace() {
   const [pendingQuery, setPendingQuery] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [errorKind, setErrorKind] = useState<ApiError['kind'] | null>(null);
+  const [previousSessionId, setPreviousSessionId] = useState<string | null>(null);
   const failedQueryRef = useRef<string | null>(null);
   const [estimatedDurationMs, setEstimatedDurationMs] = useState(82_000);
   const queryStartedAtRef = useRef<number | null>(null);
@@ -121,9 +122,22 @@ export function useRagWorkspace() {
     );
   }, [setTurns]);
 
+  /** Restaura uma conversa do histórico, substituindo os turns atuais. */
+  const restoreConversation = useCallback((items: ConversationTurn[], newSessionId: string | null) => {
+    requestIdRef.current++;
+    setTurns(items);
+    setSessionId(newSessionId);
+    setPendingQuery(null);
+    setError(null);
+    setErrorKind(null);
+    failedQueryRef.current = null;
+  }, [setSessionId, setTurns]);
+
   const startNewConversation = useCallback(() => {
     requestIdRef.current++;
     setTurns([]);
+    // Preserva o session_id anterior para o histórico não ficar inacessível.
+    if (sessionIdRef.current) setPreviousSessionId(sessionIdRef.current);
     setSessionId(null);
     setPendingQuery(null);
     setError(null);
@@ -142,6 +156,8 @@ export function useRagWorkspace() {
     submitQuery,
     retryQuery,
     markRated,
+    restoreConversation,
+    previousSessionId,
     startNewConversation,
   };
 }
