@@ -16,7 +16,7 @@ npm ci
 
 Pré-requisitos: Git, **Node.js LTS 22+** e **Python 3.12 de 64 bits** para o backend. A geração e os embeddings padrão dependem da internet e do endpoint compartilhado da turma.
 
-1. Siga [docs/GUIA_EXECUCAO_LOCAL.md](docs/GUIA_EXECUCAO_LOCAL.md) para clonar o **backend na branch `joao-reis`**, instalar as dependências e iniciar a API em `http://localhost:8080`. Os índices e o SQLite já estão versionados; não é preciso coletar documentos nem reindexar.
+1. Siga [docs/GUIA_EXECUCAO_LOCAL.md](docs/GUIA_EXECUCAO_LOCAL.md) para clonar o **backend na branch `joao-reis`**, instalar as dependências e iniciar a API em `http://localhost:8080`. O Git não inclui os arquivos grandes do corpus: instale o pacote de dados distribuído separadamente antes de iniciar a API; clonar o código não instala SQLite, documentos ou índices.
 2. Na pasta deste frontend, com o backend rodando:
 
    ```bash
@@ -26,6 +26,8 @@ Pré-requisitos: Git, **Node.js LTS 22+** e **Python 3.12 de 64 bits** para o ba
    ```
 
 3. Na tela **Consulta**, envie, por exemplo: **“O que estabelece a Lei 14.133/2021?”**. A resposta deve mostrar fontes. Verifique também Contratações, Histórico e feedback.
+
+Baixe o [pacote de dados V7](https://drive.google.com/file/d/1Zgt4b57sXZeGI0M6qz61ePk5h5SWh0vx/view?usp=drive_link), extraia na raiz do backend e configure `SNAPSHOT_MANIFEST=runtime_bundle.json` no `.env`. Após iniciar a API, confira `/ready`. A interface exibe os dados do backend conectado.
 
 `npm run dev` e os diagnósticos usam `.env.development`, já versionado com `VITE_API_BASE_URL=http://localhost:8080`. Para outra URL, crie `.env.development.local` e reinicie o Vite. Nunca coloque senhas ou tokens nas variáveis `VITE_*`: elas são públicas no navegador.
 

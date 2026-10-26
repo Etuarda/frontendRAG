@@ -1,7 +1,8 @@
 # Rodar o NEXO RJ após um clone
 
-Este guia instala **dois repositórios** e conecta a interface ao RAG real. Não precisa
-coletar PDFs, executar OCR, gerar embeddings ou montar índices para perguntar.
+Este guia prepara **dois repositórios** e conecta a interface ao RAG real. Os dados
+pesados do corpus não estão no Git: além do código, é necessário instalar um pacote
+de dados distribuído separadamente.
 
 | Serviço | Repositório/branch | Endereço local |
 | --- | --- | --- |
@@ -36,11 +37,10 @@ git clone --branch joao-reis --single-branch https://github.com/Diogooliveira10/
 cd rag-grande-desafio-grupo04-cenario01
 ```
 
-O backend publicado nessa branch inclui:
-
-- índices FAISS e metadados em `index/` (quatro bases oficiais e suplemento sintético);
-- SQLite em `data/structured/base_estruturada.sqlite`;
-- corpus normalizado/inventário utilizados pelo catálogo.
+Baixe o [pacote de dados V7](https://drive.google.com/file/d/1Zgt4b57sXZeGI0M6qz61ePk5h5SWh0vx/view?usp=drive_link)
+e extraia **na raiz do backend**. O ZIP inclui documentos normalizados, SQLite,
+catálogo, índices FAISS e `runtime_bundle.json`, nos caminhos usados pela API.
+O clone fornece apenas o código.
 
 Não use uma branch diferente sem conferir a compatibilidade da API e dos dados.
 
@@ -80,9 +80,10 @@ OLLAMA_API_KEY=ollama
 GENERATION_MODEL=qcwind/qwen3-8b-instruct-Q4-K-M
 EMBEDDING_MODEL=xagi/qwen3-embedding:0.6b-q4_k_m
 DATABASE_URL=
+SNAPSHOT_MANIFEST=runtime_bundle.json
 ```
 
-- `DATABASE_URL=` vazio usa o SQLite incluído. Não precisa criar banco nem tabela.
+- `DATABASE_URL=` vazio usa o SQLite instalado em `data/structured/`; o arquivo não vem no clone do código e deve acompanhar o pacote de dados.
 - Não troque o provedor/modelo de embeddings sem reconstruir índices compatíveis.
 - `RERANK_ENABLED=true` é o padrão. Para uma primeira execução leve, altere para
   **`RERANK_ENABLED=false`**: evita o download/carregamento do cross-encoder,
@@ -116,7 +117,8 @@ No Linux/macOS:
 ```
 
 Deixe rodando. Abra <http://localhost:8080/health>: deve retornar
-`{"status":"ok"}`. A documentação interativa fica em <http://localhost:8080/docs>.
+`{"status":"ok"}`. Confira também <http://localhost:8080/ready> para validar o
+bundle instalado. A documentação interativa fica em <http://localhost:8080/docs>.
 **Saúde online não garante que o LLM esteja disponível.**
 
 ## 6. Clonar esta fork — terminal 2
@@ -139,8 +141,6 @@ npm run check:backend
 ```
 
 Verifica `/health`, o resumo do corpus e uma contratação real. Não chama o LLM.
-Na revisão de backend `876449e`, o resumo retornou **1.425 documentos e 5 bases**
-(`v6 + suplemento sintético`). Os números podem mudar com atualizações do corpus.
 
 Para verificar também embeddings, recuperação e geração:
 
@@ -238,11 +238,3 @@ GitHub Pages serve somente arquivos estáticos. Para usar a interface publicada,
 é necessário backend **HTTPS público**, URL definida no build e origem liberada
 no CORS. `http://localhost:8080` não é uma API pública para os visitantes do site.
 Veja [FRONTEND_INTEGRATION.md](FRONTEND_INTEGRATION.md).
-
-## Validação desta preparação
-
-Com os arquivos publicados do backend `joao-reis` na revisão `876449e`, configuração
-copiada de `.env.example`, SQLite/índices versionados e `RERANK_ENABLED=false`,
-foram verificados: saúde, catálogo, resumo do corpus, pergunta normativa real com
-fontes, histórico e feedback (HTTP 200). Essa validação não depende das alterações
-locais ainda não publicadas do backend; não garante disponibilidade futura do ECOA.
