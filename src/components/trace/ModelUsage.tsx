@@ -6,7 +6,8 @@ function Tokens({ value }: { value: unknown }) { const t = recordOf(value); cons
 export function ModelUsage({ stage }: { stage: TraceStage }) {
   const d = stage.detalhes, llm = recordOf(d.llm), tokens = stage.tokens ?? llm.tokens ?? d.tokens;
   const provider = llm.provider ?? d.provider, model = llm.model ?? llm.model_requested ?? d.model ?? stage.modelo;
-  const calls = Array.isArray(d.chamadas_modelo) ? d.chamadas_modelo.filter((call) => call && typeof call === 'object') as Record<string, unknown>[] : [];
+  const chamadas = llm.chamadas_modelo ?? d.chamadas_modelo;
+  const calls = Array.isArray(chamadas) ? chamadas.filter((call) => call && typeof call === 'object') as Record<string, unknown>[] : [];
   const embedding = recordOf(d.query_embedding), fallback = llm.fallback_used === true || d.fallback_used === true || provider === 'openrouter';
   const finishReason = llm.finish_reason ?? d.finish_reason, latency = numberOf(llm.latencia_ms, d.latencia_ms);
   if (!model && !provider && !Object.keys(recordOf(tokens)).length && !calls.length && !embedding.cache_hits) return null;
