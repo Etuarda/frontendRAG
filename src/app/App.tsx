@@ -38,17 +38,16 @@ export function App() {
   };
 
   // Clique num card do histórico restaura a conversa e navega para a consulta.
-  const handleOpenConversation = (item: HistoryItem) => {
-    const currentSessionId = workspace.sessionId;
-    const turn: ConversationTurn = {
+  const handleOpenConversation = (items: HistoryItem[], sessionId: string) => {
+    const turns: ConversationTurn[] = [...items].reverse().map((item) => ({
       response: {
         ...item.resposta,
         query_id: item.query_id,
-        session_id: currentSessionId ?? '',
+        session_id: sessionId,
       },
       feedback: item.feedback.length > 0 ? item.feedback[0].avaliacao : undefined,
-    };
-    workspace.restoreConversation([turn], currentSessionId);
+    }));
+    workspace.restoreConversation(turns, sessionId);
     setActiveView('consulta');
   };
 
@@ -85,7 +84,7 @@ export function App() {
         return <FontesPage />;
 
       case 'historico':
-        return <HistoricoPage sessionId={workspace.sessionId ?? workspace.previousSessionId} onNewQuery={handleNewQuery} onOpenConversation={handleOpenConversation} />;
+        return <HistoricoPage sessionIds={workspace.sessionIds} onNewQuery={handleNewQuery} onOpenConversation={handleOpenConversation} />;
 
       case 'como-funciona':
         return <ComoFuncionaPage onNavigate={setActiveView} />;

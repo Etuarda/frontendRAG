@@ -64,3 +64,55 @@ describe('App com backend desligado', () => {
     expect(await screen.findByText('Backend offline')).toBeInTheDocument();
   });
 });
+
+describe('Histórico das conversas', () => {
+  it('lista todas as sessões conhecidas e restaura a conversa selecionada inteira', async () => {
+    const previousSessionId = 's_2234567890123456';
+    const currentSessionId = 's_1234567890123456';
+    window.sessionStorage.setItem('nexo:conversation-session-id', currentSessionId);
+    window.sessionStorage.setItem(
+      'nexo:conversation-session-ids',
+      JSON.stringify([previousSessionId, currentSessionId])
+    );
+    const previousConversation = [{
+      query_id: 'q_0', run_id: 'r_0', ts: '2026-10-14T12:00:00Z', query: 'Pergunta de outra conversa',
+      resposta: { query: 'Pergunta de outra conversa', answer: 'Resposta da conversa anterior', bases_consultadas: [],
+        sources_used: [], confidence_level: 'alta', is_refusal: false, refusal_reason: null },
+      feedback: [],
+    }];
+    const currentConversation = [
+      {
+        query_id: 'q_2', run_id: 'r_2', ts: '2026-10-14T12:02:00Z', query: 'Pergunta recente',
+        resposta: { query: 'Pergunta recente', answer: 'Resposta recente', bases_consultadas: [],
+          sources_used: [], confidence_level: 'alta', is_refusal: false, refusal_reason: null },
+        feedback: [],
+      },
+      {
+        query_id: 'q_1', run_id: 'r_1', ts: '2026-10-14T12:01:00Z', query: 'Pergunta antiga',
+        resposta: { query: 'Pergunta antiga', answer: 'Resposta antiga', bases_consultadas: [],
+          sources_used: [], confidence_level: 'alta', is_refusal: false, refusal_reason: null },
+        feedback: [],
+      },
+    ];
+    stubFetch((request) => {
+      if (request.url.pathname === '/api/v1/history') {
+        return json(200, request.headers.get('X-Session-Id') === previousSessionId
+          ? previousConversation
+          : currentConversation);
+      }
+      return json(200, { status: 'ok' });
+    });
+    render(<App />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Histórico' }));
+    expect(await screen.findByText('Resposta da conversa anterior')).toBeInTheDocument();
+    expect(screen.getByText('Resposta antiga')).toBeInTheDocument();
+    expect(screen.getByText('Resposta recente')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Abrir conversa: Pergunta recente' }));
+
+    expect(screen.getByRole('article', { name: 'Pergunta: Pergunta antiga' })).toBeInTheDocument();
+    expect(screen.getByRole('article', { name: 'Pergunta: Pergunta recente' })).toBeInTheDocument();
+    expect(screen.queryByRole('article', { name: 'Pergunta: Pergunta de outra conversa' })).not.toBeInTheDocument();
+    expect(window.sessionStorage.getItem('nexo:conversation-session-id')).toBe(currentSessionId);
+  });
+});

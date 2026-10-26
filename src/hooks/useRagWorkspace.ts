@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ConversationHistoryTurn } from '../types/api';
 import type { Avaliacao, ConversationTurn } from '../types/app';
 import { ApiError } from '../services/api';
@@ -6,6 +6,7 @@ import { queryRag } from '../services/query.service';
 import { errorMessage } from './useApiResource';
 
 const SESSION_STORAGE_KEY = 'nexo:conversation-session-id';
+const SESSION_IDS_STORAGE_KEY = 'nexo:conversation-session-ids';
 
 function readStoredSession(): string | null {
   try {
@@ -24,6 +25,28 @@ function storeSession(sessionId: string | null): void {
   }
 }
 
+function readStoredSessionIds(currentSessionId: string | null): string[] {
+  try {
+    const stored = window.sessionStorage.getItem(SESSION_IDS_STORAGE_KEY);
+    const parsed: unknown = stored ? JSON.parse(stored) : [];
+    const sessionIds = Array.isArray(parsed)
+      ? parsed.filter((id): id is string => typeof id === 'string' && id.length > 0)
+      : [];
+    if (currentSessionId && !sessionIds.includes(currentSessionId)) sessionIds.push(currentSessionId);
+    return [...new Set(sessionIds)];
+  } catch {
+    return currentSessionId ? [currentSessionId] : [];
+  }
+}
+
+function storeSessionIds(sessionIds: string[]): void {
+  try {
+    window.sessionStorage.setItem(SESSION_IDS_STORAGE_KEY, JSON.stringify(sessionIds));
+  } catch {
+    // O histórico fica limitado às sessões em memória quando o navegador bloqueia storage.
+  }
+}
+
 function historyFrom(turns: ConversationTurn[]): ConversationHistoryTurn[] {
   return turns.slice(-10).map(({ response }) => ({
     pergunta: response.query,
@@ -38,14 +61,17 @@ export function useRagWorkspace() {
   const turnsRef = useRef<ConversationTurn[]>([]);
   const [turns, setTurnsState] = useState<ConversationTurn[]>([]);
   const [sessionId, setSessionIdState] = useState<string | null>(initialSession.current);
+  const [sessionIds, setSessionIdsState] = useState<string[]>(() => readStoredSessionIds(initialSession.current));
+  const sessionIdsRef = useRef(sessionIds);
   const [pendingQuery, setPendingQuery] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [errorKind, setErrorKind] = useState<ApiError['kind'] | null>(null);
-  const [previousSessionId, setPreviousSessionId] = useState<string | null>(null);
   const failedQueryRef = useRef<string | null>(null);
   const [estimatedDurationMs, setEstimatedDurationMs] = useState(82_000);
   const queryStartedAtRef = useRef<number | null>(null);
   const requestIdRef = useRef(0);
+
+  useEffect(() => { storeSessionIds(sessionIds); }, [sessionIds]);
 
   const setTurns = useCallback((next: ConversationTurn[] | ((current: ConversationTurn[]) => ConversationTurn[])) => {
     const value = typeof next === 'function' ? next(turnsRef.current) : next;
@@ -57,6 +83,19 @@ export function useRagWorkspace() {
     sessionIdRef.current = next;
     setSessionIdState(next);
     storeSession(next);
+    if (next && !sessionIdsRef.current.includes(next)) {
+      const updated = [...sessionIdsRef.current, next];
+      sessionIdsRef.current = updated;
+      setSessionIdsState(updated);
+      storeSessionIds(updated);
+    }
+  }, []);
+
+  const forgetSessionId = useCallback((invalidSessionId: string) => {
+    const updated = sessionIdsRef.current.filter((id) => id !== invalidSessionId);
+    sessionIdsRef.current = updated;
+    setSessionIdsState(updated);
+    storeSessionIds(updated);
   }, []);
 
   const loading = pendingQuery !== null;
@@ -84,7 +123,9 @@ export function useRagWorkspace() {
           response = await queryRag(normalized, context());
         } catch (err) {
           // Uma sessão restaurada pode ter formato/validade incompatível com o servidor atual.
-          if (!(err instanceof ApiError) || err.status !== 422 || !sessionIdRef.current) throw err;
+          const invalidSessionId = sessionIdRef.current;
+          if (!(err instanceof ApiError) || err.status !== 422 || !invalidSessionId) throw err;
+          forgetSessionId(invalidSessionId);
           setSessionId(null);
           response = await queryRag(normalized, {
             history: historyFrom(turnsRef.current),
@@ -106,7 +147,7 @@ export function useRagWorkspace() {
         if (requestId === requestIdRef.current) setPendingQuery(null);
       }
     },
-    [pendingQuery, setSessionId, setTurns]
+    [pendingQuery, forgetSessionId, setSessionId, setTurns]
   );
 
   const retryQuery = useCallback(() => {
@@ -136,8 +177,6 @@ export function useRagWorkspace() {
   const startNewConversation = useCallback(() => {
     requestIdRef.current++;
     setTurns([]);
-    // Preserva o session_id anterior para o histórico não ficar inacessível.
-    if (sessionIdRef.current) setPreviousSessionId(sessionIdRef.current);
     setSessionId(null);
     setPendingQuery(null);
     setError(null);
@@ -157,7 +196,7 @@ export function useRagWorkspace() {
     retryQuery,
     markRated,
     restoreConversation,
-    previousSessionId,
+    sessionIds,
     startNewConversation,
   };
 }

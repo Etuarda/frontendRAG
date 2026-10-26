@@ -5,39 +5,45 @@ import { formatDateTime } from '../../utils/format';
 import type { HistoryItem } from '../../types/api';
 
 interface HistoricoPageProps {
-  sessionId: string | null;
+  sessionIds: string[];
   onNewQuery: () => void;
-  onOpenConversation: (item: HistoryItem) => void;
+  onOpenConversation: (items: HistoryItem[], sessionId: string) => void;
 }
 
-export function HistoricoPage({ sessionId, onNewQuery, onOpenConversation }: HistoricoPageProps) {
-  const history = useHistory(sessionId);
+export function HistoricoPage({ sessionIds, onNewQuery, onOpenConversation }: HistoricoPageProps) {
+  const history = useHistory(sessionIds);
+  const conversations = new Map<string, HistoryItem[]>();
+  for (const { item, sessionId } of history.items) {
+    const items = conversations.get(sessionId) ?? [];
+    items.push(item);
+    conversations.set(sessionId, items);
+  }
   return (
     <div className="page-content-wrapper">
       <header className="page-header">
-        <span className="page-eyebrow">CONVERSA ATUAL</span>
+        <span className="page-eyebrow">CONVERSAS DESTA ABA</span>
         <h1 className="page-title">Histórico</h1>
-        <p className="page-description">Somente as consultas da sua sessão atual, identificada com segurança pelo navegador.</p>
+        <p className="page-description">Consultas das conversas iniciadas nesta aba, identificadas com segurança pelo navegador.</p>
       </header>
 
-      {!sessionId ? (
-        <EmptyState title="Inicie uma conversa para consultar o histórico desta sessão.">
+      {!sessionIds.length ? (
+        <EmptyState title="Inicie uma conversa para consultar o histórico desta aba.">
           <button type="button" className="btn-empty-start" onClick={onNewQuery}>
             <Icon name="plus" size={15} /><span>Nova conversa</span>
           </button>
         </EmptyState>
       ) : null}
-      {sessionId && history.status === 'loading' ? <LoadingState label="Carregando histórico..." /> : null}
-      {sessionId && history.status === 'error' && history.error ? <ErrorState message={history.error} onRetry={history.reload} /> : null}
-      {sessionId && history.status === 'empty' ? <EmptyState title="Nenhuma consulta nesta conversa." /> : null}
-      {sessionId && history.status === 'success' ? (
-        <ul className="history-items-feed" aria-label="Consultas desta conversa">
-          {history.items.map((item) => (
-            <li key={item.query_id} className="history-feed-card history-feed-card--clickable">
+      {sessionIds.length > 0 && history.status === 'loading' ? <LoadingState label="Carregando histórico..." /> : null}
+      {sessionIds.length > 0 && history.status === 'error' && history.error ? <ErrorState message={history.error} onRetry={history.reload} /> : null}
+      {sessionIds.length > 0 && history.status === 'empty' ? <EmptyState title="Nenhuma consulta nesta aba." /> : null}
+      {sessionIds.length > 0 && history.status === 'success' ? (
+        <ul className="history-items-feed" aria-label="Consultas das conversas desta aba">
+          {history.items.map(({ item, sessionId }) => (
+            <li key={`${sessionId}:${item.query_id}`} className="history-feed-card history-feed-card--clickable">
               <button
                 type="button"
                 className="history-feed-card-btn"
-                onClick={() => onOpenConversation(item)}
+                onClick={() => onOpenConversation(conversations.get(sessionId) ?? [item], sessionId)}
                 aria-label={`Abrir conversa: ${item.query}`}
               >
                 <div className="feed-card-header">

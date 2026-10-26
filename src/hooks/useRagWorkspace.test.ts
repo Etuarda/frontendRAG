@@ -20,11 +20,16 @@ function response(query: string, queryId: string, sessionId = 's_123456789012345
 describe('useRagWorkspace', () => {
   it('guarda a sessão por aba, reenvia contexto e descarta em Nova conversa', async () => {
     let call = 0;
-    const { calls } = stubFetch((request) => json(200, response(String((request.body as { query: string }).query), `q_${++call}`)));
+    const { calls } = stubFetch((request) => {
+      const currentCall = ++call;
+      const sessionId = currentCall < 4 ? 's_1234567890123456' : 's_2234567890123456';
+      return json(200, response(String((request.body as { query: string }).query), `q_${currentCall}`, sessionId));
+    });
     const { result } = renderHook(() => useRagWorkspace());
 
     await act(() => result.current.submitQuery('Primeira pergunta'));
     expect(window.sessionStorage.getItem('nexo:conversation-session-id')).toBe('s_1234567890123456');
+    expect(window.sessionStorage.getItem('nexo:conversation-session-ids')).toBe(JSON.stringify(['s_1234567890123456']));
 
     await act(() => result.current.submitQuery('E depois?'));
     expect(calls[1].body).toMatchObject({
@@ -43,10 +48,14 @@ describe('useRagWorkspace', () => {
 
     act(() => result.current.startNewConversation());
     expect(window.sessionStorage.getItem('nexo:conversation-session-id')).toBeNull();
+    expect(window.sessionStorage.getItem('nexo:conversation-session-ids')).toBe(JSON.stringify(['s_1234567890123456']));
     expect(result.current.turns).toHaveLength(0);
 
     await act(() => result.current.submitQuery('Pergunta da nova conversa'));
     expect(calls[3].body).toEqual({ query: 'Pergunta da nova conversa', top_k: 5 });
+    expect(window.sessionStorage.getItem('nexo:conversation-session-ids')).toBe(
+      JSON.stringify(['s_1234567890123456', 's_2234567890123456'])
+    );
   });
 
   it('ao receber 422 por sessão restaurada, limpa o id e tenta uma vez sem ele', async () => {
@@ -61,5 +70,6 @@ describe('useRagWorkspace', () => {
     expect(calls[0].body).toMatchObject({ session_id: 's_1234567890123456' });
     expect(calls[1].body).not.toHaveProperty('session_id');
     expect(window.sessionStorage.getItem('nexo:conversation-session-id')).toBe('s_nova_123456789012');
+    expect(window.sessionStorage.getItem('nexo:conversation-session-ids')).toBe(JSON.stringify(['s_nova_123456789012']));
   });
 });
