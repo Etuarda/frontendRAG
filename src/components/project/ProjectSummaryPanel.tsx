@@ -11,9 +11,8 @@ interface ProjectSummaryPanelProps {
 }
 
 /**
- * Inventário do corpus ativo (v7-reparo), na mesma estrutura de
- * CORPUS_INVENTORY.md: versão, coletado em, trechos, vetores e schema SQL,
- * todos vindos de GET /api/v1/project/summary.
+ * Resumo do snapshot que a API verificou como ativo. Os números e avisos vêm
+ * de GET /api/v1/project/summary; esta interface não seleciona nem promove versões.
  */
 export function ProjectSummaryPanel({ compact = false }: ProjectSummaryPanelProps) {
   const { status, data, error, reload } = useApiResource(getProjectSummary, []);
@@ -24,9 +23,14 @@ export function ProjectSummaryPanel({ compact = false }: ProjectSummaryPanelProp
 
   const active = data.corpus_ativo;
   const previous = data.snapshot_anterior;
-  // Sem metadados ativos verificados, não inventar números: usar o inventário.
-  const chunks = active?.total_chunks ?? data.total_documentos;
+  const chunks = active?.total_chunks;
   const vectors = active?.total_vetores;
+  const missingVectors = active?.chunks_sem_vetor;
+  const vectorCoverage = missingVectors == null || vectors == null
+    ? 'Não verificada'
+    : missingVectors === 0
+      ? 'Completa'
+      : `Parcial (${formatNumber(missingVectors)} sem vetor)`;
   const mb = active?.bytes_documents ? Math.round(active.bytes_documents / (1024 * 1024)) : null;
 
   return (
@@ -38,7 +42,7 @@ export function ProjectSummaryPanel({ compact = false }: ProjectSummaryPanelProp
 
       <div className="project-metrics">
         <div className="orgao-metric-box">
-          <span className="metric-num">{formatNumber(chunks)}</span>
+          <span className="metric-num">{chunks == null ? 'Não verificado' : formatNumber(chunks)}</span>
           <span className="metric-lbl">Chunks normalizados</span>
         </div>
         <div className="orgao-metric-box">
@@ -56,22 +60,26 @@ export function ProjectSummaryPanel({ compact = false }: ProjectSummaryPanelProp
       <DetailList
         items={[
           { label: 'Cenário', value: data.scenario_id },
-          { label: 'Versão', value: active?.versao ?? data.versao_corpus },
+          { label: 'Versão do corpus', value: active?.versao ?? 'Não verificada' },
+          { label: 'Inventário de coleta', value: data.versao_inventario ?? data.versao_corpus },
           { label: 'Snapshot', value: active?.snapshot_id },
-          { label: 'Coletado em', value: active?.construido_em ? formatDateTime(active.construido_em) : null },
-          { label: 'Completo', value: active ? 'Sim' : data.inventario_completo ? 'Completo' : 'Incompleto' },
+          { label: 'Construído em', value: active?.construido_em ? formatDateTime(active.construido_em) : null },
+          { label: 'Cobertura vetorial', value: vectorCoverage },
           { label: 'Versão do manifesto', value: data.versao_manifesto },
           { label: 'documents.jsonl', value: mb === null ? null : `${mb} MB` },
         ]}
       />
 
+      {active?.avisos.map((warning) => (
+        <p className="project-summary-desc" key={warning}>{warning}</p>
+      ))}
+
       {!compact && previous ? (
         <p className="project-summary-desc">
-          Snapshot anterior {previous.versao} ({formatNumber(previous.arquivos)} arquivos,
+          Inventário de coleta anterior {previous.versao} ({formatNumber(previous.arquivos)} arquivos,
           coletado em {previous.coletado_em ? formatDateTime(previous.coletado_em) : '—'})
-          {previous.backup ? ` preservado em ${previous.backup}` : ''}. O inventário de coleta da
-          v6 não descreve o acervo ativo, não representa atualização em tempo real nem garante
-          cobertura integral. Um arquivo de origem pode conter vários contratos.
+          {previous.backup ? ` preservado em ${previous.backup}` : ''}. Ele não descreve o acervo
+          ativo nem garante cobertura integral. Um arquivo de origem pode conter vários contratos.
         </p>
       ) : null}
 
