@@ -24,11 +24,11 @@ interface TracePanelProps {
 type PanelSelection = { kind: 'session' } | { kind: 'question'; queryId: string };
 
 const INTEGRITY_PRESENTATION: Record<TraceIntegrity['status'], { label: string; semantic: 'success' | 'neutral' | 'danger' }> = {
-  valida: { label: 'Integridade válida', semantic: 'success' },
-  parcial: { label: 'Integridade parcial', semantic: 'neutral' },
+  valida: { label: 'Cadeia íntegra', semantic: 'success' },
+  parcial: { label: 'Cadeia sem quebras', semantic: 'neutral' },
   legado: { label: 'Log legado', semantic: 'neutral' },
-  invalida: { label: 'Integridade inválida', semantic: 'danger' },
-  nao_verificada: { label: 'Integridade não verificada', semantic: 'neutral' },
+  invalida: { label: 'Cadeia quebrada', semantic: 'danger' },
+  nao_verificada: { label: 'Aguardando conferência', semantic: 'neutral' },
 };
 
 const INTEGRITY_REASONS: Record<string, string> = {
@@ -43,7 +43,11 @@ function formatVerificationDate(value: string | null): string | null {
   return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'medium' }).format(date);
 }
 
-function IntegritySummary({ integrity }: { integrity?: TraceIntegrity | null }) {
+function metric(value: number | null): string {
+  return value === null ? '—' : value.toLocaleString('pt-BR');
+}
+
+function IntegritySummary({ integrity, onRefresh }: { integrity?: TraceIntegrity | null; onRefresh: () => void }) {
   if (!integrity) return null;
   const presentation = INTEGRITY_PRESENTATION[integrity.status] ?? INTEGRITY_PRESENTATION.nao_verificada;
   const verifiedAt = formatVerificationDate(integrity.verificado_em);
@@ -53,18 +57,23 @@ function IntegritySummary({ integrity }: { integrity?: TraceIntegrity | null }) 
   return (
     <section className={`trace-integrity trace-integrity-${presentation.semantic}`} aria-labelledby="trace-integrity-title">
       <div className="trace-integrity-heading">
-        <h3 id="trace-integrity-title">Integridade do registro</h3>
+        <h3 id="trace-integrity-title">Integridade do log</h3>
         <span className={`trace-integrity-badge trace-integrity-badge-${presentation.semantic}`}>{presentation.label}</span>
       </div>
+      <p className="trace-integrity-description">Cada etapa de cada pergunta vira uma linha no log, e cada linha guarda o hash da anterior, como os elos de uma corrente. Alterar, apagar ou trocar a ordem de uma linha quebra a corrente naquele ponto.</p>
+      <dl className="trace-integrity-stats">
+        <div><dd>{metric(integrity.registros_verificados)}</dd><dt>Linhas encadeadas</dt></div>
+        <div><dd>{metric(integrity.registros_legados)}</dd><dt>Linhas anteriores à cadeia</dt></div>
+        <div><dd>{metric(integrity.problemas)}</dd><dt>Quebras</dt></div>
+      </dl>
       <dl className="trace-integrity-meta">
-        <div><dt>Algoritmo</dt><dd>{integrity.algoritmo}</dd></div>
-        {integrity.registros_verificados !== null ? <div><dt>Registros verificados</dt><dd>{integrity.registros_verificados.toLocaleString('pt-BR')}</dd></div> : null}
-        {integrity.registros_legados !== null ? <div><dt>Registros legados</dt><dd>{integrity.registros_legados.toLocaleString('pt-BR')}</dd></div> : null}
-        {integrity.problemas !== null ? <div><dt>Quebras encontradas</dt><dd>{integrity.problemas.toLocaleString('pt-BR')}</dd></div> : null}
-        {verifiedAt ? <div><dt>Verificado em</dt><dd>{verifiedAt}</dd></div> : null}
+        <div><dt>Algoritmo</dt><dd>{integrity.algoritmo ?? 'Não informado'}</dd></div>
+        <div><dt>Cadeia</dt><dd>{integrity.motivo === 'cadeia_desligada' ? 'Desligada' : 'Ligada'}</dd></div>
+        <div><dt>Conferido em</dt><dd>{verifiedAt ?? 'Aguardando verificação'}</dd></div>
       </dl>
       {reason ? <p className="trace-integrity-reason">{reason}</p> : null}
-      <p className="trace-integrity-note">A cadeia comprova que o log não foi alterado; ela não comprova que a resposta da IA está correta.</p>
+      <p className="trace-integrity-note">A cadeia comprova que o log não foi alterado. Ela não comprova que a resposta da IA está correta.</p>
+      <button type="button" className="trace-integrity-refresh" onClick={onRefresh}><Icon name="refresh-cw" size={15} /> Conferir de novo</button>
     </section>
   );
 }
@@ -148,12 +157,12 @@ function StageCard({ stage, previousRanks }: { stage: TraceStage; previousRanks:
   );
 }
 
-function QuestionTraceView({ trace }: { trace: TraceResponse }) {
+function QuestionTraceView({ trace, onRefreshIntegrity }: { trace: TraceResponse; onRefreshIntegrity: () => void }) {
   return (
     <>
       {trace.completo === false ? <div className="trace-incomplete">Processamento não terminou — trace incompleto</div> : null}
       <p className="trace-question">{trace.pergunta ?? 'Pergunta sem texto registrado'}</p>
-      <IntegritySummary integrity={trace.integridade} />
+      <IntegritySummary integrity={trace.integridade} onRefresh={onRefreshIntegrity} />
       <SummaryBadges summary={trace.resumo} totalMs={trace.latencia_pipeline_ms ?? trace.latencia_total_ms} />
       {trace.latencia_metodo === 'soma_etapas_legado' ? <small>tempo estimado</small> : null}
       <ol className="trace-timeline">
@@ -195,7 +204,19 @@ export function TracePanel({ sessionId, queryId, onClose }: TracePanelProps) {
   const [attempt, setAttempt] = useState(0);
   const panelRef = useRef<HTMLElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const backButtonRef = useRef<HTMLButtonElement>(null);
+  const titleRef = useRef<HTMLHeadingElement>(null);
   const returnFocusRef = useRef<HTMLElement | null>(null);
+  const previousSelectionRef = useRef(selection.kind === 'question' ? `question:${selection.queryId}` : 'session');
+
+  const changeSelection = useCallback((next: PanelSelection) => {
+    // Evita renderizar temporariamente o payload da conversa como pergunta
+    // (ou vice-versa) enquanto a próxima requisição ainda não começou.
+    setData(null);
+    setError(null);
+    setLoading(true);
+    setSelection(next);
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true); setError(null);
@@ -208,8 +229,20 @@ export function TracePanel({ sessionId, queryId, onClose }: TracePanelProps) {
 
   useEffect(() => { void load(); }, [load]);
   useEffect(() => {
+    const selectionKey = selection.kind === 'question' ? `question:${selection.queryId}` : 'session';
+    if (previousSelectionRef.current !== selectionKey) {
+      // O controle acionado sai do DOM quando a visão muda. Reposiciona o foco
+      // num destino previsível para o fluxo por teclado não cair no <body>.
+      if (selection.kind === 'question' && !queryId) backButtonRef.current?.focus();
+      else titleRef.current?.focus();
+      previousSelectionRef.current = selectionKey;
+    }
+  }, [selection, queryId]);
+  useEffect(() => {
     returnFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     closeButtonRef.current?.focus();
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         event.preventDefault();
@@ -223,7 +256,10 @@ export function TracePanel({ sessionId, queryId, onClose }: TracePanelProps) {
       if (!focusable?.length) return;
       const first = focusable[0];
       const last = focusable[focusable.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
+      if (!panelRef.current?.contains(document.activeElement)) {
+        event.preventDefault();
+        (event.shiftKey ? last : first).focus();
+      } else if (event.shiftKey && document.activeElement === first) {
         event.preventDefault(); last.focus();
       } else if (!event.shiftKey && document.activeElement === last) {
         event.preventDefault(); first.focus();
@@ -232,6 +268,7 @@ export function TracePanel({ sessionId, queryId, onClose }: TracePanelProps) {
     window.addEventListener('keydown', onKey);
     return () => {
       window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = previousOverflow;
       returnFocusRef.current?.focus();
     };
   }, [onClose]);
@@ -241,17 +278,17 @@ export function TracePanel({ sessionId, queryId, onClose }: TracePanelProps) {
       <section ref={panelRef} className="trace-panel" role="dialog" aria-modal="true" aria-labelledby="trace-panel-title">
         <header className="trace-panel-header">
           <div>
-            {selection.kind === 'question' && !queryId ? <button type="button" className="trace-back" onClick={() => setSelection({ kind: 'session' })}>← Conversa</button> : null}
+            {selection.kind === 'question' && !queryId ? <button ref={backButtonRef} type="button" className="trace-back" onClick={() => changeSelection({ kind: 'session' })}>← Conversa</button> : null}
             <span className="composer-eyebrow">Transparência</span>
-            <h2 id="trace-panel-title">{selection.kind === 'question' ? 'Caminho da pergunta' : 'Caminho da conversa'}</h2>
+            <h2 ref={titleRef} id="trace-panel-title" tabIndex={-1}>{selection.kind === 'question' ? 'Caminho da pergunta' : 'Caminho da conversa'}</h2>
           </div>
           <button ref={closeButtonRef} type="button" className="trace-close" onClick={onClose} aria-label="Fechar caminho"><Icon name="x" size={20} /></button>
         </header>
         <div className="trace-panel-body">
           {loading ? <div className="trace-loading"><span /><span /><span /> Carregando caminho...</div> : null}
           {error ? <div className="trace-error" role="alert"><Icon name="info" size={18} /><div><strong>Não foi possível abrir o caminho</strong><p>{error}</p><button type="button" onClick={() => setAttempt((value) => value + 1)}>Tentar de novo</button></div></div> : null}
-          {!loading && !error && data && selection.kind === 'question' ? <QuestionTraceView trace={data as TraceResponse} /> : null}
-          {!loading && !error && data && selection.kind === 'session' ? <SessionTraceView trace={data as SessionTraceResponse} onQuestion={(id) => setSelection({ kind: 'question', queryId: id })} /> : null}
+          {!loading && !error && data && selection.kind === 'question' ? <QuestionTraceView trace={data as TraceResponse} onRefreshIntegrity={() => { closeButtonRef.current?.focus(); setAttempt((value) => value + 1); }} /> : null}
+          {!loading && !error && data && selection.kind === 'session' ? <SessionTraceView trace={data as SessionTraceResponse} onQuestion={(id) => changeSelection({ kind: 'question', queryId: id })} /> : null}
         </div>
       </section>
     </div>

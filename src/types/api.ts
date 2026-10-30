@@ -78,7 +78,7 @@ export type TraceIntegrityStatus = 'valida' | 'parcial' | 'legado' | 'invalida' 
 
 export interface TraceIntegrity {
   status: TraceIntegrityStatus;
-  algoritmo: string;
+  algoritmo: string | null;
   registros_verificados: number | null;
   registros_legados: number | null;
   problemas: number | null;

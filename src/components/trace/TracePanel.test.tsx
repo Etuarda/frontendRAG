@@ -13,6 +13,12 @@ const TRACE = {
   etapas: [{ ordem: 1, stage: 'consulta_sql', base: 'sql', status: 'ok', ts: '2026-10-08T10:00:00-03:00', latencia_ms: 120, input: 'pergunta', output: '2 linhas', tokens: null, modelo: null, hash: '6fb0da913e42abcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcd', hash_anterior: '8bd326c502cbabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcd', detalhes: { sql: 'SELECT * FROM contratacoes', linhas: [{ id: 1 }] } }],
 };
 
+const SESSION_TRACE = {
+  session_id: 's_1234567890123456', inicio: TRACE.inicio, fim: TRACE.fim,
+  total_perguntas: 1, consultou_sql: 1, consultou_vetorial: 1,
+  perguntas: [{ ordem: 1, query_id: 'q_1', pergunta: 'Quais contratos?', inicio: TRACE.inicio, fim: TRACE.fim, latencia_total_ms: 2000, resumo: TRACE.resumo, etapas: ['consulta_sql'] }],
+};
+
 describe('TracePanel', () => {
   it('leva o foco ao diálogo e fecha com Escape', async () => {
     stubFetch(() => json(200, TRACE));
@@ -24,6 +30,20 @@ describe('TracePanel', () => {
     expect(onClose).toHaveBeenCalledOnce();
   });
 
+  it('preserva o fluxo de foco entre conversa, pergunta e retorno', async () => {
+    stubFetch((request) => json(200, request.url.pathname.includes('/sessions/') ? SESSION_TRACE : TRACE));
+    render(<TracePanel sessionId="s_1234567890123456" onClose={vi.fn()} />);
+
+    const question = await screen.findByRole('button', { name: /Quais contratos/ });
+    await userEvent.click(question);
+    const back = screen.getByRole('button', { name: '← Conversa' });
+    expect(back).toHaveFocus();
+
+    await userEvent.click(back);
+    expect(screen.getByRole('heading', { name: 'Caminho da conversa' })).toHaveFocus();
+    expect(await screen.findByRole('button', { name: /Quais contratos/ })).toBeInTheDocument();
+  });
+
   it('mostra o resumo e os detalhes do caminho da pergunta', async () => {
     const { calls } = stubFetch(() => json(200, TRACE));
     render(<TracePanel sessionId="s_1234567890123456" queryId="q_1" onClose={vi.fn()} />);
@@ -31,7 +51,7 @@ describe('TracePanel', () => {
     expect(await screen.findByText('Quais contratos?')).toBeInTheDocument();
     expect(screen.getByText('Evidências SQL')).toBeInTheDocument();
     expect(screen.getByText('Consulta à base estruturada')).toBeInTheDocument();
-    expect(screen.getByText('Integridade parcial')).toHaveClass('trace-integrity-badge-neutral');
+    expect(screen.getByText('Cadeia sem quebras')).toHaveClass('trace-integrity-badge-neutral');
     expect(screen.getByText('23.058')).toBeInTheDocument();
     expect(screen.getByText('14.682')).toBeInTheDocument();
     expect(screen.getByText('Hash').parentElement).toHaveTextContent('6fb0da913e42…');
@@ -51,9 +71,9 @@ describe('TracePanel', () => {
     }));
     render(<TracePanel sessionId="s_1234567890123456" queryId="q_1" onClose={vi.fn()} />);
 
-    expect(await screen.findByText('Integridade inválida')).toHaveClass('trace-integrity-badge-danger');
+    expect(await screen.findByText('Cadeia quebrada')).toHaveClass('trace-integrity-badge-danger');
     expect(screen.getByText('Registro anterior à cadeia de hashes')).toBeInTheDocument();
-    expect(screen.getByText('Quebras encontradas').nextElementSibling).toHaveTextContent('2');
+    expect(screen.getByText('Quebras').previousElementSibling).toHaveTextContent('2');
   });
 
   it('explica quando a integridade ainda não foi verificada', async () => {
@@ -63,9 +83,9 @@ describe('TracePanel', () => {
     }));
     render(<TracePanel sessionId="s_1234567890123456" queryId="q_1" onClose={vi.fn()} />);
 
-    expect(await screen.findByText('Integridade não verificada')).toBeInTheDocument();
+    expect(await screen.findByText('Aguardando conferência')).toBeInTheDocument();
     expect(screen.getByText('A verificação está em andamento.')).toBeInTheDocument();
-    expect(screen.queryByText('Registros verificados')).not.toBeInTheDocument();
+    expect(screen.getAllByText('—')).toHaveLength(3);
   });
 
   it('oferece nova tentativa quando a rede falha', async () => {
