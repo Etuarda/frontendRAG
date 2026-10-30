@@ -15,6 +15,8 @@ interface ConsultaPageProps {
   estimatedDurationMs: number;
   error: string | null;
   errorKind: 'config' | 'network' | 'timeout' | 'http' | null;
+  errorStatus: number | null;
+  retryAfterSeconds: number;
   onSubmitQuery: (query: string) => void;
   onRetryQuery: () => void;
   onRated: (queryId: string, avaliacao: Avaliacao) => void;
@@ -30,6 +32,8 @@ export function ConsultaPage({
   estimatedDurationMs,
   error,
   errorKind,
+  errorStatus,
+  retryAfterSeconds,
   onSubmitQuery,
   onRetryQuery,
   onRated,
@@ -51,8 +55,8 @@ export function ConsultaPage({
   if (!hasThread) {
     return (
       <div className="consulta-page-container">
-        <SearchComposer loading={loading} onSubmit={onSubmitQuery} onNavigate={onNavigate} />
-        {error ? <QueryError message={error} kind={errorKind} onRetry={onRetryQuery} /> : null}
+        <SearchComposer loading={loading || retryAfterSeconds > 0} onSubmit={onSubmitQuery} onNavigate={onNavigate} />
+        {error ? <QueryError message={error} kind={errorKind} status={errorStatus} retryAfterSeconds={retryAfterSeconds} onRetry={onRetryQuery} /> : null}
       </div>
     );
   }
@@ -102,11 +106,11 @@ export function ConsultaPage({
           </div>
         ) : null}
 
-        {error && !loading ? <QueryError message={error} kind={errorKind} onRetry={onRetryQuery} /> : null}
+        {error && !loading ? <QueryError message={error} kind={errorKind} status={errorStatus} retryAfterSeconds={retryAfterSeconds} onRetry={onRetryQuery} /> : null}
       </div>
 
       <div className="conversation-composer-dock">
-        <FollowUpComposer loading={loading} onSubmit={onSubmitQuery} />
+        <FollowUpComposer loading={loading || retryAfterSeconds > 0} onSubmit={onSubmitQuery} />
       </div>
 
       {sessionId && traceQueryId ? <TracePanel sessionId={sessionId} queryId={traceQueryId} onClose={() => setTraceQueryId(null)} /> : null}
@@ -115,14 +119,17 @@ export function ConsultaPage({
   );
 }
 
-function QueryError({ message, kind, onRetry }: { message: string; kind: string | null; onRetry: () => void }) {
+function QueryError({ message, kind, status, retryAfterSeconds, onRetry }: { message: string; kind: string | null; status: number | null; retryAfterSeconds: number; onRetry: () => void }) {
+  const rateLimited = status === 429;
   return (
     <div className="error-notice-card" role="alert">
       <Icon name="info" size={18} />
       <div className="error-copy">
-        <strong>{kind === 'timeout' ? 'A consulta demorou mais que o esperado.' : 'Não foi possível concluir a consulta'}</strong>
+        <strong>{rateLimited ? 'Limite de perguntas atingido' : kind === 'timeout' ? 'A consulta demorou mais que o esperado.' : 'Não foi possível concluir a consulta'}</strong>
         {kind !== 'timeout' ? <p>{message}</p> : null}
-        <button type="button" className="btn-state-retry" onClick={onRetry}>Tentar novamente</button>
+        <button type="button" className="btn-state-retry" onClick={onRetry} disabled={rateLimited && retryAfterSeconds > 0}>
+          {rateLimited && retryAfterSeconds > 0 ? `Tente novamente em ${retryAfterSeconds} s` : 'Tentar novamente'}
+        </button>
       </div>
     </div>
   );

@@ -8,10 +8,12 @@ export const STATUS_PRESENTATION: Record<string, { label: string; semantic: Trac
   ok: { label: 'concluído', semantic: 'success' },
   iniciado: { label: 'registrado', semantic: 'neutral' },
   pulado: { label: 'não executada', semantic: 'neutral' },
+  conversa: { label: 'conversa', semantic: 'neutral' },
+  aviso: { label: 'aviso', semantic: 'warning' },
   degradado: { label: 'com reserva', semantic: 'warning' },
-  recusa: { label: 'recusada', semantic: 'warning' },
+  recusa: { label: 'recusada', semantic: 'neutral' },
   erro: { label: 'erro', semantic: 'danger' },
-  rejeitado: { label: 'rejeitado', semantic: 'danger' },
+  rejeitado: { label: 'rejeitado', semantic: 'warning' },
 };
 export const SKIP_REASONS: Record<string, string> = { calculo_sql_suficiente: 'o cálculo SQL respondeu sozinho, sem busca de trechos', sem_historico: 'primeira pergunta da conversa, nada a reescrever', autossuficiente: 'a pergunta já fazia sentido sozinha', modo_desligado: 'etapa desligada na configuração' };
 export const FILTER_REASONS: Record<string, string> = { nenhum_chunk_passou: 'nenhum trecho atendia; a busca seguiu sem esse filtro', sem_campo: 'esta base não possui esse dado' };

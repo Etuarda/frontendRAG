@@ -63,6 +63,8 @@ export function App() {
             estimatedDurationMs={workspace.estimatedDurationMs}
             error={workspace.error}
             errorKind={workspace.errorKind}
+            errorStatus={workspace.errorStatus}
+            retryAfterSeconds={workspace.retryAfterSeconds}
             onSubmitQuery={workspace.submitQuery}
             onRetryQuery={workspace.retryQuery}
             onRated={workspace.markRated}

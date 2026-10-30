@@ -7,7 +7,7 @@ describe('ConsultaPage: timeout', () => {
   it('mostra mensagem amigável, sem spinner, e permite tentar novamente', async () => {
     const retry = vi.fn();
     render(<ConsultaPage turns={[]} sessionId={null} pendingQuery={null} loading={false}
-      estimatedDurationMs={82000} error="erro técnico oculto" errorKind="timeout"
+      estimatedDurationMs={82000} error="erro técnico oculto" errorKind="timeout" errorStatus={null} retryAfterSeconds={0}
       onSubmitQuery={vi.fn()} onRetryQuery={retry} onRated={vi.fn()}
       onNewConversation={vi.fn()} onNavigate={vi.fn()} />);
     expect(screen.getByText('A consulta demorou mais que o esperado.')).toBeInTheDocument();

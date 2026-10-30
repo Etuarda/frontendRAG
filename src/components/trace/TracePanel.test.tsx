@@ -76,7 +76,7 @@ describe('TracePanel', () => {
   });
 
   it('aplica a semântica visual explícita dos status', async () => {
-    const statuses = ['iniciado', 'iniciado', 'ok', 'pulado', 'degradado', 'recusa', 'erro', 'rejeitado', 'desconhecido'];
+    const statuses = ['iniciado', 'iniciado', 'ok', 'pulado', 'conversa', 'aviso', 'degradado', 'recusa', 'erro', 'rejeitado', 'desconhecido'];
     stubFetch(() => json(200, {
       ...TRACE,
       etapas: statuses.map((status, ordem) => ({
@@ -89,10 +89,12 @@ describe('TracePanel', () => {
     screen.getAllByText('registrado').forEach((status) => expect(status).toHaveClass('trace-status-neutral'));
     expect(screen.getByText('concluído')).toHaveClass('trace-status-success');
     expect(screen.getByText('não executada')).toHaveClass('trace-status-neutral');
+    expect(screen.getByText('conversa')).toHaveClass('trace-status-neutral');
+    expect(screen.getByText('aviso')).toHaveClass('trace-status-warning');
     expect(screen.getByText('com reserva')).toHaveClass('trace-status-warning');
-    expect(screen.getByText('recusada')).toHaveClass('trace-status-warning');
+    expect(screen.getByText('recusada')).toHaveClass('trace-status-neutral');
     expect(screen.getByText('erro')).toHaveClass('trace-status-danger');
-    expect(screen.getByText('rejeitado')).toHaveClass('trace-status-danger');
+    expect(screen.getByText('rejeitado')).toHaveClass('trace-status-warning');
     expect(screen.getByText('desconhecido')).toHaveClass('trace-status-neutral');
   });
 });

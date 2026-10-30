@@ -49,6 +49,18 @@ describe('apiRequest', () => {
     expect(error.message).toBe('campo obrigatório tamanho inválido');
   });
 
+  it('preserva detail e Retry-After no limite 429', async () => {
+    stubFetch(() => new Response(
+      JSON.stringify({ detail: 'Muitas requisições em pouco tempo. Tente de novo em 17 s.' }),
+      { status: 429, headers: { 'Content-Type': 'application/json', 'Retry-After': '17' } }
+    ));
+    const error = await failureOf(apiRequest('/api/v1/query'));
+
+    expect(error.status).toBe(429);
+    expect(error.message).toBe('Muitas requisições em pouco tempo. Tente de novo em 17 s.');
+    expect(error.retryAfterSeconds).toBe(17);
+  });
+
   it.each([
     [404, /não encontrado/],
     [500, /não conseguiu concluir/],

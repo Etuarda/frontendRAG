@@ -66,12 +66,22 @@ export function useRagWorkspace() {
   const [pendingQuery, setPendingQuery] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [errorKind, setErrorKind] = useState<ApiError['kind'] | null>(null);
+  const [errorStatus, setErrorStatus] = useState<number | null>(null);
+  const [retryAfterSeconds, setRetryAfterSeconds] = useState(0);
   const failedQueryRef = useRef<string | null>(null);
   const [estimatedDurationMs, setEstimatedDurationMs] = useState(82_000);
   const queryStartedAtRef = useRef<number | null>(null);
   const requestIdRef = useRef(0);
 
   useEffect(() => { storeSessionIds(sessionIds); }, [sessionIds]);
+
+  useEffect(() => {
+    if (retryAfterSeconds <= 0) return;
+    const timer = window.setInterval(() => {
+      setRetryAfterSeconds((current) => Math.max(0, current - 1));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [retryAfterSeconds > 0]);
 
   const setTurns = useCallback((next: ConversationTurn[] | ((current: ConversationTurn[]) => ConversationTurn[])) => {
     const value = typeof next === 'function' ? next(turnsRef.current) : next;
@@ -103,13 +113,14 @@ export function useRagWorkspace() {
   const submitQuery = useCallback(
     async (queryText: string) => {
       const normalized = queryText.trim();
-      if (!normalized || pendingQuery !== null) return;
+      if (!normalized || pendingQuery !== null || retryAfterSeconds > 0) return;
 
       const requestId = ++requestIdRef.current;
       queryStartedAtRef.current = Date.now();
       setPendingQuery(normalized);
       setError(null);
       setErrorKind(null);
+      setErrorStatus(null);
       failedQueryRef.current = null;
 
       const context = () => ({
@@ -141,13 +152,17 @@ export function useRagWorkspace() {
         if (requestId === requestIdRef.current) {
           setError(errorMessage(err));
           setErrorKind(err instanceof ApiError ? err.kind : 'network');
+          setErrorStatus(err instanceof ApiError ? err.status ?? null : null);
+          if (err instanceof ApiError && err.status === 429) {
+            setRetryAfterSeconds(err.retryAfterSeconds ?? 1);
+          }
           failedQueryRef.current = normalized;
         }
       } finally {
         if (requestId === requestIdRef.current) setPendingQuery(null);
       }
     },
-    [pendingQuery, forgetSessionId, setSessionId, setTurns]
+    [pendingQuery, retryAfterSeconds, forgetSessionId, setSessionId, setTurns]
   );
 
   const retryQuery = useCallback(() => {
@@ -171,6 +186,7 @@ export function useRagWorkspace() {
     setPendingQuery(null);
     setError(null);
     setErrorKind(null);
+    setErrorStatus(null);
     failedQueryRef.current = null;
   }, [setSessionId, setTurns]);
 
@@ -181,6 +197,7 @@ export function useRagWorkspace() {
     setPendingQuery(null);
     setError(null);
     setErrorKind(null);
+    setErrorStatus(null);
     failedQueryRef.current = null;
   }, [setSessionId, setTurns]);
 
@@ -192,6 +209,8 @@ export function useRagWorkspace() {
     estimatedDurationMs,
     error,
     errorKind,
+    errorStatus,
+    retryAfterSeconds,
     submitQuery,
     retryQuery,
     markRated,

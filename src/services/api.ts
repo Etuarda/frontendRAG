@@ -17,7 +17,8 @@ export class ApiError extends Error {
     message: string,
     public kind: ApiErrorKind,
     public status?: number,
-    public data?: unknown
+    public data?: unknown,
+    public retryAfterSeconds?: number
   ) {
     super(message);
     this.name = 'ApiError';
@@ -36,6 +37,7 @@ interface RequestOptions {
 
 // Mensagens por status seguem a seção 13 do contrato.
 const STATUS_MESSAGES: Record<number, string> = {
+  429: 'Muitas requisições em pouco tempo. Tente novamente em instantes.',
   404: 'Recurso não encontrado.',
   422: 'Os dados enviados são inválidos.',
   500: 'O servidor não conseguiu concluir a solicitação. Tente novamente.',
@@ -116,7 +118,12 @@ export async function apiRequest<T>(endpoint: string, options: RequestOptions = 
       readDetail(payload) ??
       STATUS_MESSAGES[response.status] ??
       `Erro inesperado do servidor (${response.status}).`;
-    throw new ApiError(message, 'http', response.status, payload);
+    const retryAfterHeader = response.headers.get('Retry-After');
+    const retryAfter = retryAfterHeader === null ? Number.NaN : Number(retryAfterHeader);
+    const retryAfterSeconds = response.status === 429 && Number.isFinite(retryAfter) && retryAfter >= 0
+      ? Math.ceil(retryAfter)
+      : undefined;
+    throw new ApiError(message, 'http', response.status, payload, retryAfterSeconds);
   }
 
   return payload as T;
