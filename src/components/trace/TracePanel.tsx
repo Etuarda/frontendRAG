@@ -80,16 +80,14 @@ function IntegritySummary({ integrity, onRefresh }: { integrity?: TraceIntegrity
 
 function HashDetails({ stage }: { stage: TraceStage }) {
   if (!stage.hash) return <p className="trace-hash-legacy">Registro anterior à cadeia de hashes</p>;
-  const shortHash = `${stage.hash.slice(0, 12)}…`;
   return (
-    <details className="trace-hash-details">
-      <summary>Hash <code title={stage.hash}>{shortHash}</code></summary>
+    <section className="trace-hash-details" aria-label={`Hashes da etapa ${stage.ordem}`}>
       <dl>
         <div><dt>Hash da etapa</dt><dd><code>{stage.hash}</code></dd></div>
         <div><dt>Hash anterior no log global</dt><dd><code>{stage.hash_anterior ?? 'não informado'}</code></dd></div>
       </dl>
       <p>O registro anterior pode pertencer a outra requisição; a validação é feita pelo backend.</p>
-    </details>
+    </section>
   );
 }
 

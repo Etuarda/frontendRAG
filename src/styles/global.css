@@ -2153,12 +2153,11 @@ button:disabled {
 .trace-stage-details { margin-top: 0.6rem; color: var(--text-secondary); font-size: 0.76rem; }
 .trace-stage-details summary { width: fit-content; cursor: pointer; }
 .trace-stage-details h4 { margin: 0.8rem 0 0.35rem; color: var(--text-primary); }
-.trace-hash-details { margin-top: 0.5rem; color: var(--text-secondary); font-size: 0.7rem; }
-.trace-hash-details summary { width: fit-content; cursor: pointer; }
+.trace-hash-details { margin-top: 0.65rem; padding: 0.65rem; border-radius: var(--radius-sm); background: var(--bg-main); color: var(--text-secondary); font-size: 0.7rem; }
 .trace-hash-details code, .trace-hash-legacy { font-family: var(--font-mono); }
-.trace-hash-details dl { display: grid; gap: 0.45rem; margin-top: 0.55rem; }
+.trace-hash-details dl { display: grid; gap: 0.55rem; }
 .trace-hash-details dt { font-weight: 600; }
-.trace-hash-details dd { overflow-wrap: anywhere; color: var(--text-primary); }
+.trace-hash-details dd { margin-top: 0.1rem; overflow-wrap: anywhere; color: var(--text-primary); line-height: 1.45; }
 .trace-hash-details p { margin-top: 0.5rem; line-height: 1.4; }
 .trace-hash-legacy { margin-top: 0.5rem; color: var(--text-secondary); font-size: 0.68rem; }
 

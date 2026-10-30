@@ -54,8 +54,6 @@ describe('TracePanel', () => {
     expect(screen.getByText('Cadeia sem quebras')).toHaveClass('trace-integrity-badge-neutral');
     expect(screen.getByText('23.058')).toBeInTheDocument();
     expect(screen.getByText('14.682')).toBeInTheDocument();
-    expect(screen.getByText('Hash').parentElement).toHaveTextContent('6fb0da913e42…');
-    await userEvent.click(screen.getByText('Hash'));
     expect(screen.getByText(TRACE.etapas[0].hash)).toBeInTheDocument();
     expect(screen.getByText(TRACE.etapas[0].hash_anterior)).toBeInTheDocument();
     await userEvent.click(screen.getByText('Ver detalhes'));
