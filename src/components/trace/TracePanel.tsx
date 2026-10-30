@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type {
   SessionTraceResponse,
+  TraceIntegrity,
   TraceResponse,
   TraceStage,
   TraceSummary,
@@ -21,6 +22,67 @@ interface TracePanelProps {
 }
 
 type PanelSelection = { kind: 'session' } | { kind: 'question'; queryId: string };
+
+const INTEGRITY_PRESENTATION: Record<TraceIntegrity['status'], { label: string; semantic: 'success' | 'neutral' | 'danger' }> = {
+  valida: { label: 'Integridade válida', semantic: 'success' },
+  parcial: { label: 'Integridade parcial', semantic: 'neutral' },
+  legado: { label: 'Log legado', semantic: 'neutral' },
+  invalida: { label: 'Integridade inválida', semantic: 'danger' },
+  nao_verificada: { label: 'Integridade não verificada', semantic: 'neutral' },
+};
+
+const INTEGRITY_REASONS: Record<string, string> = {
+  verificacao_em_andamento: 'A verificação está em andamento.',
+  cadeia_desligada: 'A cadeia de hashes está desligada no backend.',
+};
+
+function formatVerificationDate(value: string | null): string | null {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'medium' }).format(date);
+}
+
+function IntegritySummary({ integrity }: { integrity?: TraceIntegrity | null }) {
+  if (!integrity) return null;
+  const presentation = INTEGRITY_PRESENTATION[integrity.status] ?? INTEGRITY_PRESENTATION.nao_verificada;
+  const verifiedAt = formatVerificationDate(integrity.verificado_em);
+  const reason = integrity.motivo
+    ? INTEGRITY_REASONS[integrity.motivo] ?? integrity.motivo.replace(/^erro_na_verificacao:/, 'Erro na verificação: ')
+    : null;
+  return (
+    <section className={`trace-integrity trace-integrity-${presentation.semantic}`} aria-labelledby="trace-integrity-title">
+      <div className="trace-integrity-heading">
+        <h3 id="trace-integrity-title">Integridade do registro</h3>
+        <span className={`trace-integrity-badge trace-integrity-badge-${presentation.semantic}`}>{presentation.label}</span>
+      </div>
+      <dl className="trace-integrity-meta">
+        <div><dt>Algoritmo</dt><dd>{integrity.algoritmo}</dd></div>
+        {integrity.registros_verificados !== null ? <div><dt>Registros verificados</dt><dd>{integrity.registros_verificados.toLocaleString('pt-BR')}</dd></div> : null}
+        {integrity.registros_legados !== null ? <div><dt>Registros legados</dt><dd>{integrity.registros_legados.toLocaleString('pt-BR')}</dd></div> : null}
+        {integrity.problemas !== null ? <div><dt>Quebras encontradas</dt><dd>{integrity.problemas.toLocaleString('pt-BR')}</dd></div> : null}
+        {verifiedAt ? <div><dt>Verificado em</dt><dd>{verifiedAt}</dd></div> : null}
+      </dl>
+      {reason ? <p className="trace-integrity-reason">{reason}</p> : null}
+      <p className="trace-integrity-note">A cadeia comprova que o log não foi alterado; ela não comprova que a resposta da IA está correta.</p>
+    </section>
+  );
+}
+
+function HashDetails({ stage }: { stage: TraceStage }) {
+  if (!stage.hash) return <p className="trace-hash-legacy">Registro anterior à cadeia de hashes</p>;
+  const shortHash = `${stage.hash.slice(0, 12)}…`;
+  return (
+    <details className="trace-hash-details">
+      <summary>Hash <code title={stage.hash}>{shortHash}</code></summary>
+      <dl>
+        <div><dt>Hash da etapa</dt><dd><code>{stage.hash}</code></dd></div>
+        <div><dt>Hash anterior no log global</dt><dd><code>{stage.hash_anterior ?? 'não informado'}</code></dd></div>
+      </dl>
+      <p>O registro anterior pode pertencer a outra requisição; a validação é feita pelo backend.</p>
+    </details>
+  );
+}
 
 function countVectorEvidence(value: TraceSummary['evidencias_vetorial']): number {
   if (typeof value === 'number') return value;
@@ -68,6 +130,7 @@ function StageCard({ stage, previousRanks }: { stage: TraceStage; previousRanks:
           <span>{formatMs(stage.latencia_ms)}</span>
         </div>
         <span className={`trace-status trace-status-${statusPresentation.semantic}`}>{statusPresentation.label}</span>
+        <HashDetails stage={stage} />
         {stage.detalhes.tentativa_busca === 2 && ['retrieval_denso', 'retrieval_bm25', 'fusao_rrf', 'rerank'].includes(stage.stage) ? <span className="trace-attempt">2ª tentativa · sem filtros</span> : null}
         <details className="trace-stage-details">
           <summary>Ver detalhes</summary>
@@ -90,6 +153,7 @@ function QuestionTraceView({ trace }: { trace: TraceResponse }) {
     <>
       {trace.completo === false ? <div className="trace-incomplete">Processamento não terminou — trace incompleto</div> : null}
       <p className="trace-question">{trace.pergunta ?? 'Pergunta sem texto registrado'}</p>
+      <IntegritySummary integrity={trace.integridade} />
       <SummaryBadges summary={trace.resumo} totalMs={trace.latencia_pipeline_ms ?? trace.latencia_total_ms} />
       {trace.latencia_metodo === 'soma_etapas_legado' ? <small>tempo estimado</small> : null}
       <ol className="trace-timeline">

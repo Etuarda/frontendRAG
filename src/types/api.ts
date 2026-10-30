@@ -68,6 +68,22 @@ export interface TraceStage {
   tokens: Record<string, number> | null;
   modelo: string | null;
   detalhes: Record<string, unknown>;
+  /** HMAC-SHA256 do registro no log; null em registros anteriores à cadeia. */
+  hash?: string | null;
+  /** Hash do registro global anterior, que pode pertencer a outra requisição. */
+  hash_anterior?: string | null;
+}
+
+export type TraceIntegrityStatus = 'valida' | 'parcial' | 'legado' | 'invalida' | 'nao_verificada';
+
+export interface TraceIntegrity {
+  status: TraceIntegrityStatus;
+  algoritmo: string;
+  registros_verificados: number | null;
+  registros_legados: number | null;
+  problemas: number | null;
+  verificado_em: string | null;
+  motivo: string | null;
 }
 
 export interface TraceSummary {
@@ -100,6 +116,7 @@ export interface TraceResponse {
   completo?: boolean | null;
   latencia_metodo?: string;
   latencia_pipeline_ms?: number | null;
+  integridade?: TraceIntegrity | null;
 }
 
 export interface SessionTraceQuestion {

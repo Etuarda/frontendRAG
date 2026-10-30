@@ -8,8 +8,9 @@ const TRACE = {
   query_id: 'q_1', session_id: 's_1234567890123456', run_ids: ['run_1'],
   pergunta: 'Quais contratos?', inicio: '2026-10-08T10:00:00-03:00', fim: '2026-10-08T10:00:02-03:00',
   latencia_total_ms: 2000,
+  integridade: { status: 'parcial', algoritmo: 'HMAC-SHA256', registros_verificados: 23058, registros_legados: 14682, problemas: 0, verificado_em: '2026-10-30T19:45:12Z', motivo: null },
   resumo: { consultou_sql: true, consultou_vetorial: true, evidencias_sql: 2, evidencias_vetorial: { contratos: 5 }, fontes_citadas: ['a'], confidence_level: 'alta', is_refusal: false },
-  etapas: [{ ordem: 1, stage: 'consulta_sql', base: 'sql', status: 'ok', ts: '2026-10-08T10:00:00-03:00', latencia_ms: 120, input: 'pergunta', output: '2 linhas', tokens: null, modelo: null, detalhes: { sql: 'SELECT * FROM contratacoes', linhas: [{ id: 1 }] } }],
+  etapas: [{ ordem: 1, stage: 'consulta_sql', base: 'sql', status: 'ok', ts: '2026-10-08T10:00:00-03:00', latencia_ms: 120, input: 'pergunta', output: '2 linhas', tokens: null, modelo: null, hash: '6fb0da913e42abcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcd', hash_anterior: '8bd326c502cbabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcd', detalhes: { sql: 'SELECT * FROM contratacoes', linhas: [{ id: 1 }] } }],
 };
 
 describe('TracePanel', () => {
@@ -30,9 +31,41 @@ describe('TracePanel', () => {
     expect(await screen.findByText('Quais contratos?')).toBeInTheDocument();
     expect(screen.getByText('Evidências SQL')).toBeInTheDocument();
     expect(screen.getByText('Consulta à base estruturada')).toBeInTheDocument();
+    expect(screen.getByText('Integridade parcial')).toHaveClass('trace-integrity-badge-neutral');
+    expect(screen.getByText('23.058')).toBeInTheDocument();
+    expect(screen.getByText('14.682')).toBeInTheDocument();
+    expect(screen.getByText('Hash').parentElement).toHaveTextContent('6fb0da913e42…');
+    await userEvent.click(screen.getByText('Hash'));
+    expect(screen.getByText(TRACE.etapas[0].hash)).toBeInTheDocument();
+    expect(screen.getByText(TRACE.etapas[0].hash_anterior)).toBeInTheDocument();
     await userEvent.click(screen.getByText('Ver detalhes'));
     expect(screen.getByText('SELECT * FROM contratacoes')).toBeInTheDocument();
     expect(calls[0].headers.get('X-Session-Id')).toBe('s_1234567890123456');
+  });
+
+  it('mostra quebra de integridade e trata etapa legada sem hash', async () => {
+    stubFetch(() => json(200, {
+      ...TRACE,
+      integridade: { ...TRACE.integridade, status: 'invalida', problemas: 2 },
+      etapas: [{ ...TRACE.etapas[0], hash: null, hash_anterior: null }],
+    }));
+    render(<TracePanel sessionId="s_1234567890123456" queryId="q_1" onClose={vi.fn()} />);
+
+    expect(await screen.findByText('Integridade inválida')).toHaveClass('trace-integrity-badge-danger');
+    expect(screen.getByText('Registro anterior à cadeia de hashes')).toBeInTheDocument();
+    expect(screen.getByText('Quebras encontradas').nextElementSibling).toHaveTextContent('2');
+  });
+
+  it('explica quando a integridade ainda não foi verificada', async () => {
+    stubFetch(() => json(200, {
+      ...TRACE,
+      integridade: { status: 'nao_verificada', algoritmo: 'HMAC-SHA256', registros_verificados: null, registros_legados: null, problemas: null, verificado_em: null, motivo: 'verificacao_em_andamento' },
+    }));
+    render(<TracePanel sessionId="s_1234567890123456" queryId="q_1" onClose={vi.fn()} />);
+
+    expect(await screen.findByText('Integridade não verificada')).toBeInTheDocument();
+    expect(screen.getByText('A verificação está em andamento.')).toBeInTheDocument();
+    expect(screen.queryByText('Registros verificados')).not.toBeInTheDocument();
   });
 
   it('oferece nova tentativa quando a rede falha', async () => {

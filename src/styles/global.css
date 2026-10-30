@@ -2017,6 +2017,33 @@ button:disabled {
   line-height: 1.5;
 }
 
+.trace-integrity {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--border-subtle);
+  border-left-width: 4px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-main);
+}
+
+.trace-integrity-success { border-left-color: #28633e; }
+.trace-integrity-neutral { border-left-color: #52606d; }
+.trace-integrity-danger { border-left-color: #9d2f24; }
+.trace-integrity-heading { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
+.trace-integrity-heading h3 { font-size: 0.9rem; }
+.trace-integrity-badge { padding: 0.2rem 0.5rem; border-radius: 999px; font-size: 0.68rem; font-weight: 700; white-space: nowrap; }
+.trace-integrity-badge-success { background: #e9f7ee; color: #28633e; }
+.trace-integrity-badge-neutral { background: #eef1f4; color: #52606d; }
+.trace-integrity-badge-danger { background: #fff0ed; color: #9d2f24; }
+.trace-integrity-meta { display: flex; flex-wrap: wrap; gap: 0.55rem 1.25rem; }
+.trace-integrity-meta div { display: grid; gap: 0.05rem; }
+.trace-integrity-meta dt { color: var(--text-secondary); font-size: 0.68rem; }
+.trace-integrity-meta dd { color: var(--text-primary); font-size: 0.78rem; font-weight: 600; }
+.trace-integrity-reason { color: var(--text-primary); font-size: 0.78rem; }
+.trace-integrity-note { color: var(--text-secondary); font-size: 0.72rem; line-height: 1.45; }
+
 .trace-summary-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -2118,6 +2145,14 @@ button:disabled {
 .trace-stage-details { margin-top: 0.6rem; color: var(--text-secondary); font-size: 0.76rem; }
 .trace-stage-details summary { width: fit-content; cursor: pointer; }
 .trace-stage-details h4 { margin: 0.8rem 0 0.35rem; color: var(--text-primary); }
+.trace-hash-details { margin-top: 0.5rem; color: var(--text-secondary); font-size: 0.7rem; }
+.trace-hash-details summary { width: fit-content; cursor: pointer; }
+.trace-hash-details code, .trace-hash-legacy { font-family: var(--font-mono); }
+.trace-hash-details dl { display: grid; gap: 0.45rem; margin-top: 0.55rem; }
+.trace-hash-details dt { font-weight: 600; }
+.trace-hash-details dd { overflow-wrap: anywhere; color: var(--text-primary); }
+.trace-hash-details p { margin-top: 0.5rem; line-height: 1.4; }
+.trace-hash-legacy { margin-top: 0.5rem; color: var(--text-secondary); font-size: 0.68rem; }
 
 .trace-code-block {
   max-height: 280px;
