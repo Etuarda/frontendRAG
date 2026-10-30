@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { AppView } from '../types/app';
 import type { HistoryItem } from '../types/api';
 import type { ConversationTurn } from '../types/app';
@@ -22,8 +22,19 @@ import { HistoricoPage } from '../pages/Historico/HistoricoPage';
 export function App() {
   const [activeView, setActiveView] = useState<AppView>('consulta');
   const sidebar = useSidebar();
+  const mainRef = useRef<HTMLElement>(null);
+  const previousViewRef = useRef(activeView);
 
   const workspace = useRagWorkspace();
+
+  // Em uma SPA, a troca de tela não recarrega o documento. Move o foco para o
+  // conteúdo novo para que teclado e leitor de tela percebam a navegação.
+  useEffect(() => {
+    if (previousViewRef.current !== activeView) {
+      mainRef.current?.focus();
+      previousViewRef.current = activeView;
+    }
+  }, [activeView]);
 
   const handleNewQuery = () => {
     workspace.startNewConversation();
@@ -104,6 +115,7 @@ export function App() {
 
   return (
     <div className="nexo-app-layout">
+      <a className="skip-link" href="#conteudo-principal">Pular para o conteúdo principal</a>
       {/* Só aparece no mobile; no desktop a sidebar fixa cumpre esse papel. */}
       <header className="nexo-mobile-topbar" aria-label="Cabeçalho mobile">
         <button
@@ -148,7 +160,7 @@ export function App() {
       />
 
       <div className="nexo-main-wrapper">
-        <main className="nexo-main-canvas" role="main">
+        <main ref={mainRef} id="conteudo-principal" className="nexo-main-canvas" tabIndex={-1}>
           <div className="nexo-container">{renderActivePage()}</div>
         </main>
 

@@ -13,6 +13,16 @@ const TRACE = {
 };
 
 describe('TracePanel', () => {
+  it('leva o foco ao diálogo e fecha com Escape', async () => {
+    stubFetch(() => json(200, TRACE));
+    const onClose = vi.fn();
+    render(<TracePanel sessionId="s_1234567890123456" queryId="q_1" onClose={onClose} />);
+
+    expect(screen.getByRole('button', { name: 'Fechar caminho' })).toHaveFocus();
+    await userEvent.keyboard('{Escape}');
+    expect(onClose).toHaveBeenCalledOnce();
+  });
+
   it('mostra o resumo e os detalhes do caminho da pergunta', async () => {
     const { calls } = stubFetch(() => json(200, TRACE));
     render(<TracePanel sessionId="s_1234567890123456" queryId="q_1" onClose={vi.fn()} />);

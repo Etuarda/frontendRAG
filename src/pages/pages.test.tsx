@@ -65,6 +65,21 @@ describe('App com backend desligado', () => {
   });
 });
 
+describe('Acessibilidade por teclado', () => {
+  it('oferece salto para o conteúdo e move o foco ao trocar de tela', async () => {
+    stubFetch(() => json(200, { status: 'ok' }));
+    render(<App />);
+
+    const skipLink = screen.getByRole('link', { name: 'Pular para o conteúdo principal' });
+    const main = screen.getByRole('main');
+    expect(skipLink).toHaveAttribute('href', '#conteudo-principal');
+    expect(main).toHaveAttribute('id', 'conteudo-principal');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Sobre o projeto' }));
+    expect(main).toHaveFocus();
+  });
+});
+
 describe('Histórico das conversas', () => {
   it('lista todas as sessões conhecidas e restaura a conversa selecionada inteira', async () => {
     const previousSessionId = 's_2234567890123456';

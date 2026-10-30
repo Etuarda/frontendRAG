@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type {
   SessionTraceResponse,
   TraceResponse,
@@ -129,6 +129,9 @@ export function TracePanel({ sessionId, queryId, onClose }: TracePanelProps) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [attempt, setAttempt] = useState(0);
+  const panelRef = useRef<HTMLElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const returnFocusRef = useRef<HTMLElement | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true); setError(null);
@@ -141,20 +144,44 @@ export function TracePanel({ sessionId, queryId, onClose }: TracePanelProps) {
 
   useEffect(() => { void load(); }, [load]);
   useEffect(() => {
-    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', onKey); return () => window.removeEventListener('keydown', onKey);
+    returnFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    closeButtonRef.current?.focus();
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const focusable = panelRef.current?.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), summary, [tabindex]:not([tabindex="-1"])'
+      );
+      if (!focusable?.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault(); last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault(); first.focus();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      returnFocusRef.current?.focus();
+    };
   }, [onClose]);
 
   return (
     <div className="trace-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
-      <section className="trace-panel" role="dialog" aria-modal="true" aria-labelledby="trace-panel-title">
+      <section ref={panelRef} className="trace-panel" role="dialog" aria-modal="true" aria-labelledby="trace-panel-title">
         <header className="trace-panel-header">
           <div>
             {selection.kind === 'question' && !queryId ? <button type="button" className="trace-back" onClick={() => setSelection({ kind: 'session' })}>← Conversa</button> : null}
             <span className="composer-eyebrow">Transparência</span>
             <h2 id="trace-panel-title">{selection.kind === 'question' ? 'Caminho da pergunta' : 'Caminho da conversa'}</h2>
           </div>
-          <button type="button" className="trace-close" onClick={onClose} aria-label="Fechar caminho"><Icon name="x" size={20} /></button>
+          <button ref={closeButtonRef} type="button" className="trace-close" onClick={onClose} aria-label="Fechar caminho"><Icon name="x" size={20} /></button>
         </header>
         <div className="trace-panel-body">
           {loading ? <div className="trace-loading"><span /><span /><span /> Carregando caminho...</div> : null}

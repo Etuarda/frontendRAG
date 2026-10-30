@@ -72,10 +72,36 @@ export function Sidebar({
   const [logoFailed, setLogoFailed] = useState(false);
   const health = useHealth();
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const sidebarRef = useRef<HTMLElement>(null);
+  const returnFocusRef = useRef<HTMLElement | null>(null);
 
   // Leva o foco para dentro do drawer, para teclado e leitor de tela seguirem o menu.
   useEffect(() => {
-    if (mobileOpen) closeButtonRef.current?.focus();
+    if (!mobileOpen) return;
+    returnFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    closeButtonRef.current?.focus();
+
+    const keepFocusInside = (event: KeyboardEvent) => {
+      if (event.key !== 'Tab') return;
+      const focusable = sidebarRef.current?.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
+      if (!focusable?.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener('keydown', keepFocusInside);
+    return () => {
+      document.removeEventListener('keydown', keepFocusInside);
+      returnFocusRef.current?.focus();
+    };
   }, [mobileOpen]);
 
   const handleNavClick = (view: AppView) => {
@@ -104,7 +130,7 @@ export function Sidebar({
         aria-hidden="true"
       />
 
-      <aside id={SIDEBAR_ID} className={sidebarClassName} aria-label="Navegação da aplicação">
+      <aside ref={sidebarRef} id={SIDEBAR_ID} className={sidebarClassName} aria-label="Navegação da aplicação">
         <div className="sidebar-top">
           <button
             type="button"
